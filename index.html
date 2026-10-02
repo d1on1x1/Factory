@@ -47,6 +47,19 @@
   }
   #resetBtn:hover { background: #1d2941; }
 
+  #adminToggle {
+    top: 12px; right: 110px;
+    cursor: pointer;
+    font-size: 13px;
+    border: 1px solid #22304a;
+    background: #161f31;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: #7dd3fc;
+    font-family: inherit;
+  }
+  #adminToggle:hover { background: #1d2941; }
+
   #shop {
     top: 70px; left: 12px;
     width: 220px;
@@ -78,7 +91,6 @@
   .shop-item.disabled {
     opacity: 0.35;
     cursor: not-allowed;
-    pointer-events: none;
   }
   .shop-item .icon {
     width: 36px; height: 36px;
@@ -128,7 +140,7 @@
   #adminPanel {
     position: absolute;
     top: 70px; right: 12px;
-    width: 220px;
+    width: 230px;
     background: #161f31;
     border: 1px solid #4a7cf7;
     border-radius: 6px;
@@ -189,19 +201,31 @@
   .switch.on { background: #4a7cf7; }
   .switch.on::after { left: 20px; background: #fff; }
 
-  #adminToggle {
-    position: absolute;
-    top: 12px; right: 110px;
-    cursor: pointer;
-    font-size: 13px;
-    border: 1px solid #22304a;
-    background: #161f31;
-    padding: 10px 12px;
-    border-radius: 6px;
-    color: #7dd3fc;
-    font-family: inherit;
+  .speed-row {
+    display: flex;
+    gap: 4px;
+    padding-top: 6px;
+    flex-wrap: wrap;
   }
-  #adminToggle:hover { background: #1d2941; }
+  .speed-btn {
+    flex: 1;
+    min-width: 36px;
+    padding: 6px 0;
+    border: 1px solid #22304a;
+    background: #121a2a;
+    color: #e6ebf5;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    transition: all .15s;
+  }
+  .speed-btn:hover { background: #1a2438; }
+  .speed-btn.active {
+    background: #4a7cf7;
+    border-color: #4a7cf7;
+    color: #fff;
+  }
 </style>
 </head>
 <body>
@@ -251,6 +275,16 @@
       <span>Безлимитные блоки</span>
       <div class="switch" id="swLimits"></div>
     </div>
+    <div class="admin-row" style="display:block;">
+      <div style="margin-bottom:6px;">Скорость игры</div>
+      <div class="speed-row" id="speedRow">
+        <button class="speed-btn active" data-speed="1">1x</button>
+        <button class="speed-btn" data-speed="2">2x</button>
+        <button class="speed-btn" data-speed="3">3x</button>
+        <button class="speed-btn" data-speed="5">5x</button>
+        <button class="speed-btn" data-speed="10">10x</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -277,11 +311,11 @@
     camera: { x: 0, y: 0, scale: 1 }
   };
 
-  let admin = { infiniteMoney: false, infiniteBlocks: false };
+  let admin = { infiniteMoney: false, infiniteBlocks: false, speed: 1 };
 
   let selectedType = null;
-  let conveyorDir = 1;
-  let spawnerDir = 1;   // куда спавнер "выбрасывает" кубик: 0=up 1=right 2=down 3=left
+  let conveyorDir = 1;   // 1=right по умолчанию
+  let spawnerDir = 1;
   let items = [];
   let spawnerTimers = {};
   let images = {};
@@ -292,7 +326,7 @@
   const balanceEl = document.getElementById('balance');
   const hotbarEl = document.getElementById('hotbar');
 
-  // === Загрузка SVG ===
+  // === SVG ===
   function loadImage(name) {
     const img = new Image();
     img.onload = () => { img.ready = true; };
@@ -313,7 +347,6 @@
   window.addEventListener('resize', resize);
   resize();
 
-  // === Координаты ===
   function screenToGrid(sx, sy) {
     const s = BASE_CELL * state.camera.scale;
     return {
@@ -332,7 +365,6 @@
     ctx.fillRect(0, 0, W, H);
 
     const fieldW = GRID_W * s, fieldH = GRID_H * s;
-
     ctx.fillStyle = '#161f31';
     ctx.fillRect(camX, camY, fieldW, fieldH);
 
@@ -409,11 +441,9 @@
         ctx.drawImage(img, px + pad + size * 0.12, py + pad + size * 0.12, size * 0.76, size * 0.76);
       }
 
-      // стрелка направления для конвейера
       if (block.type === 'conveyor') {
         drawArrow(px, py, s, block.dir, 'rgba(125,211,252,0.85)');
       }
-      // стрелка направления для спавнера (куда он выкидывает кубик)
       if (block.type === 'spawner') {
         drawArrow(px, py, s, block.dir, 'rgba(245,180,0,0.9)');
       }
@@ -489,8 +519,6 @@
     };
     if (selectedType === 'spawner') {
       spawnerTimers[key] = performance.now();
-      // сразу кладём кубик в клетку перед спавнером, если там есть конвейер
-      trySpawnFromSpawner(gx, gy, true);
     }
 
     state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
@@ -510,34 +538,20 @@
     save();
   }
 
-  // Пытается заспавнить кубик из спавнера: он появляется на 1 клетку вперёд
-  // по направлению спавнера. Если там конвейер — он подхватит.
-  function trySpawnFromSpawner(gx, gy, force) {
-    const dx = [0, 1, 0, -1][spawnerDir];
-    const dy = [-1, 0, 1, 0][spawnerDir];
-    const tx = gx + dx, ty = gy + dy;
-    if (tx < 0 || ty < 0 || tx >= GRID_W || ty >= GRID_H) return;
-    // не дублируем кубики в одной клетке
-    if (items.some(it => Math.round(it.x) === tx && Math.round(it.y) === ty)) return;
-
-    // Кубик появляется на клетке tx,ty. Дальнейшее поведение — как обычно:
-    // если под ним конвейер — поедет, если продажа — продастся, если пусто — останется.
-    items.push({ x: tx, y: ty, dir: -1 });
-  }
-
   function updateTick(now) {
-    const dt = Math.min(0.1, (now - lastFrame) / 1000);
+    const realDt = Math.min(0.1, (now - lastFrame) / 1000);
     lastFrame = now;
+    const dt = realDt * admin.speed;
+    const scaledNow = now * admin.speed;
 
     // === Спавн ===
     for (const key in state.blocks) {
       const b = state.blocks[key];
       if (b.type !== 'spawner') continue;
-      if (!spawnerTimers[key]) spawnerTimers[key] = now;
-      if (now - spawnerTimers[key] >= SPAWN_INTERVAL) {
-        spawnerTimers[key] = now;
+      if (!spawnerTimers[key]) spawnerTimers[key] = scaledNow;
+      if (scaledNow - spawnerTimers[key] >= SPAWN_INTERVAL) {
+        spawnerTimers[key] = scaledNow;
         const [x, y] = key.split(',').map(Number);
-        // используем направление блока-спавнера
         const dx = [0, 1, 0, -1][b.dir];
         const dy = [-1, 0, 1, 0][b.dir];
         const tx = x + dx, ty = y + dy;
@@ -548,7 +562,7 @@
       }
     }
 
-    // === Движение кубиков ===
+    // === Движение ===
     for (let i = items.length - 1; i >= 0; i--) {
       const it = items[i];
       const cx = Math.round(it.x);
@@ -560,7 +574,6 @@
         const key = cx + ',' + cy;
         const block = state.blocks[key];
 
-        // Продажа
         if (block && block.type === 'seller') {
           if (!admin.infiniteMoney) state.balance += SELL_PRICE;
           items.splice(i, 1);
@@ -569,7 +582,6 @@
           continue;
         }
 
-        // Конвейер под нами
         if (block && block.type === 'conveyor') {
           it.dir = block.dir;
           const dx = [0, 1, 0, -1][block.dir];
@@ -610,10 +622,7 @@
 
   // === UI ===
   function updateBalance() {
-    if (admin.infiniteMoney) {
-      balanceEl.textContent = '∞ $';
-      return;
-    }
+    if (admin.infiniteMoney) { balanceEl.textContent = '∞ $'; return; }
     balanceEl.textContent = '$' + state.balance.toFixed(2);
   }
 
@@ -715,13 +724,15 @@
     state.camera.y = e.clientY - wy * BASE_CELL * newScale;
   }, { passive: false });
 
-  // R — вращать конвейер ИЛИ спавнер (в зависимости от выбранного)
+  // R — вращение ПРОТИВ часовой
+  // dir: 0=вверх, 1=вправо, 2=вниз, 3=влево.
+  // Против часовой: вверх(0) -> влево(3) -> вниз(2) -> вправо(1) -> вверх(0)
   window.addEventListener('keydown', e => {
     if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
       if (selectedType === 'spawner') {
-        spawnerDir = (spawnerDir + 1) % 4;
+        spawnerDir = (spawnerDir + 3) % 4;
       } else {
-        conveyorDir = (conveyorDir + 1) % 4;
+        conveyorDir = (conveyorDir + 3) % 4;
       }
     }
   });
@@ -749,7 +760,6 @@
     adminPanel.classList.remove('visible');
   });
 
-  // перетаскивание
   let adminDrag = null;
   adminHeader.addEventListener('mousedown', e => {
     if (e.target.classList.contains('close')) return;
@@ -768,7 +778,6 @@
   });
   window.addEventListener('mouseup', () => { adminDrag = null; });
 
-  // свитчи
   const swMoney = document.getElementById('swMoney');
   const swLimits = document.getElementById('swLimits');
 
@@ -782,6 +791,18 @@
     admin.infiniteBlocks = !admin.infiniteBlocks;
     swLimits.classList.toggle('on', admin.infiniteBlocks);
     updateShopState();
+  });
+
+  // Скорость
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      admin.speed = parseFloat(btn.dataset.speed);
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // сбросим таймеры спавнеров, чтобы не было "прыжка"
+      const now = performance.now() * admin.speed;
+      for (const key in spawnerTimers) spawnerTimers[key] = now;
+    });
   });
 
   // === Сохранение ===
@@ -810,7 +831,6 @@
     } catch (e) { console.warn('Load error', e); return false; }
   }
 
-  // === Старт ===
   function init() {
     const loaded = load();
     if (!loaded) {

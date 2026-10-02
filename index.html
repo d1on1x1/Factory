@@ -212,9 +212,6 @@
 
 <script>
 (() => {
-  // ============================================================
-  // Пути к SVG-файлам (лежат рядом с index.html на GitHub)
-  // ============================================================
   const SRC_SPAWNER  = 'Square_Fabrick.svg';
   const SRC_CONVEYOR = 'Conveer1.svg';
   const SRC_SELLER   = 'Sell_block.svg';
@@ -223,9 +220,6 @@
   document.getElementById('iconConveyor').src = SRC_CONVEYOR;
   document.getElementById('iconSeller').src   = SRC_SELLER;
 
-  // ============================================================
-  // Константы
-  // ============================================================
   const GRID_W = 100, GRID_H = 100;
   const BASE_CELL = 32;
   const SPAWN_INTERVAL = 1000;
@@ -237,10 +231,14 @@
   // Система: 0=вверх, 1=вправо, 2=вниз, 3=влево
   const DX = [0, 1, 0, -1];
   const DY = [-1, 0, 1, 0];
-  // Угол поворота SVG для каждого направления.
-  // Стрелка на SVG нарисована ВВЕРХ, значит при dir=0 поворот = 0.
-  // Далее по часовой: 90°, 180°, -90° (=270°).
-  const ANGLE = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+
+  // Два разных угла:
+  // ANGLE_SVG — поворот SVG-иконки (стрелка на ней нарисована вверх).
+  //             dir=0 (вверх) => 0°, дальше по часовой.
+  // ANGLE_IND — поворот индикатора (drawArrowRaw рисует стрелку вправо).
+  //             dir=0 (вверх) => -90°, чтобы развернуть "вправо" в "вверх".
+  const ANGLE_SVG = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+  const ANGLE_IND = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
 
   const BLOCK_DEFS = {
     spawner:  { name: 'Спавнер',      price: 0,              src: SRC_SPAWNER },
@@ -257,12 +255,13 @@
 
   let admin = { infiniteMoney: false, infiniteBlocks: false, speed: 1 };
   let selectedType = null;
-  let conveyorDir = 0;   // по умолчанию вверх
-  let spawnerDir = 0;    // по умолчанию вверх
+  let conveyorDir = 0;
+  let spawnerDir = 0;
   let items = [];
   let spawnerTimers = {};
   let images = {};
   let lastFrame = performance.now();
+  // rotAnims хранит УГОЛ SVG для каждого блока
   let rotAnims = {};
   let popups = [];
   let dissolving = [];
@@ -272,7 +271,6 @@
   const balanceEl = document.getElementById('balance');
   const hotbarEl = document.getElementById('hotbar');
 
-  // Предзагрузка картинок
   Object.values(BLOCK_DEFS).forEach(def => {
     const img = new Image();
     img.onload = () => { img.ready = true; };
@@ -341,7 +339,7 @@
     c.closePath();
   }
 
-  // Стрелка-индикатор направления, смещённая к "носу" клетки
+  // Индикаторная стрелка (рисуется вправо в локальных координатах)
   function drawArrowRaw(px, py, s, angle, color) {
     ctx.save();
     ctx.translate(px + s / 2, py + s / 2);
@@ -396,7 +394,7 @@
       const img = images[def.src];
       if (img && img.ready) {
         if (block.type === 'conveyor' || block.type === 'spawner') {
-          const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
+          const angle = rotAnims[key] ? rotAnims[key].display : ANGLE_SVG[block.dir];
           ctx.save();
           ctx.translate(px + s / 2, py + s / 2);
           ctx.rotate(angle);
@@ -410,14 +408,13 @@
         ctx.fillRect(px + pad + size * 0.2, py + pad + size * 0.2, size * 0.6, size * 0.6);
       }
 
-      // Дополнительный полупрозрачный индикатор направления
+      // Индикаторная стрелка — рисуем в правильном направлении,
+      // беря угол от фактического направления блока (dir), а не от rotAnims.
       if (block.type === 'conveyor') {
-        const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
-        drawArrowRaw(px, py, s, angle, 'rgba(125,211,252,0.85)');
+        drawArrowRaw(px, py, s, ANGLE_IND[block.dir], 'rgba(125,211,252,0.85)');
       }
       if (block.type === 'spawner') {
-        const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
-        drawArrowRaw(px, py, s, angle, 'rgba(245,180,0,0.9)');
+        drawArrowRaw(px, py, s, ANGLE_IND[block.dir], 'rgba(245,180,0,0.9)');
       }
     }
   }
@@ -503,8 +500,8 @@
     ctx.strokeStyle = '#4a7cf7';
     ctx.lineWidth = 2;
     ctx.strokeRect(px + 1, py + 1, s - 2, s - 2);
-    if (selectedType === 'conveyor') drawArrowRaw(px, py, s, ANGLE[conveyorDir], 'rgba(125,211,252,0.7)');
-    if (selectedType === 'spawner') drawArrowRaw(px, py, s, ANGLE[spawnerDir], 'rgba(245,180,0,0.8)');
+    if (selectedType === 'conveyor') drawArrowRaw(px, py, s, ANGLE_IND[conveyorDir], 'rgba(125,211,252,0.7)');
+    if (selectedType === 'spawner') drawArrowRaw(px, py, s, ANGLE_IND[spawnerDir], 'rgba(245,180,0,0.8)');
     ctx.lineWidth = 1;
   }
 
@@ -536,7 +533,7 @@
               : 0;
     state.blocks[key] = { type: selectedType, dir };
     if (selectedType === 'spawner') spawnerTimers[key] = performance.now();
-    rotAnims[key] = { display: ANGLE[dir], target: ANGLE[dir] };
+    rotAnims[key] = { display: ANGLE_SVG[dir], target: ANGLE_SVG[dir] };
     state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
     renderHotbar();
     updateBalance();
@@ -808,7 +805,7 @@
       if (data.camera) state.camera = data.camera;
       for (const key in state.blocks) {
         const b = state.blocks[key];
-        rotAnims[key] = { display: ANGLE[b.dir] || 0, target: ANGLE[b.dir] || 0 };
+        rotAnims[key] = { display: ANGLE_SVG[b.dir] || 0, target: ANGLE_SVG[b.dir] || 0 };
         if (b.type === 'spawner') spawnerTimers[key] = performance.now();
       }
       return true;

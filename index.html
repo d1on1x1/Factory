@@ -14,7 +14,6 @@
     user-select: none;
   }
   #game { display: block; width: 100vw; height: 100vh; cursor: crosshair; position: fixed; inset: 0; }
-  #game.dragging { cursor: grabbing; }
 
   .panel {
     position: absolute;
@@ -28,28 +27,25 @@
   #balance {
     top: 12px; left: 12px;
     font-size: 18px; font-weight: 600;
-    min-width: 90px; text-align: center;
-    color: #7dd3fc;
+    min-width: 90px; text-align: center; color: #7dd3fc;
   }
   #resetBtn {
-    top: 12px; right: 12px;
-    cursor: pointer; font-size: 14px;
+    top: 12px; right: 12px; cursor: pointer; font-size: 14px;
     border: 1px solid #22304a; background: #161f31;
     padding: 10px 16px; border-radius: 6px;
     color: #e6ebf5; transition: background .15s; font-family: inherit;
   }
   #resetBtn:hover { background: #1d2941; }
   #adminToggle {
-    top: 12px; right: 110px; cursor: pointer;
-    font-size: 13px; border: 1px solid #22304a;
-    background: #161f31; padding: 10px 12px;
-    border-radius: 6px; color: #7dd3fc; font-family: inherit;
+    top: 12px; right: 110px; cursor: pointer; font-size: 13px;
+    border: 1px solid #22304a; background: #161f31;
+    padding: 10px 12px; border-radius: 6px;
+    color: #7dd3fc; font-family: inherit;
   }
   #adminToggle:hover { background: #1d2941; }
 
   #shop {
-    top: 70px; left: 12px;
-    width: 220px; padding: 12px;
+    top: 70px; left: 12px; width: 220px; padding: 12px;
   }
   #shop h3 {
     font-size: 15px; margin-bottom: 10px;
@@ -86,14 +82,19 @@
   }
   #hotbar.visible { display: flex; }
   .hotbar-item {
+    position: relative;
     width: 56px; height: 56px; border-radius: 6px;
     border: 1px solid #22304a; background: #121a2a;
     cursor: pointer; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     transition: all .15s; padding: 4px; color: #e6ebf5;
   }
-  .hotbar-item img { width: 30px; height: 30px; }
+  .hotbar-item img { width: 28px; height: 28px; }
   .hotbar-item .label { font-size: 9px; color: #8a96ab; margin-top: 2px; }
+  .hotbar-item .num {
+    position: absolute; top: 2px; left: 4px;
+    font-size: 9px; color: #5c7099; font-weight: 700;
+  }
   .hotbar-item:hover { background: #1a2438; }
   .hotbar-item.selected { background: #1a2c50; border-color: #4a7cf7; }
 
@@ -143,6 +144,14 @@
   }
   .speed-btn:hover { background: #1a2438; }
   .speed-btn.active { background: #4a7cf7; border-color: #4a7cf7; color: #fff; }
+
+  .admin-reset-btn {
+    margin-top: 10px; width: 100%; padding: 8px 0;
+    background: #2a1a1a; border: 1px solid #5a2a2a;
+    color: #ff8888; border-radius: 4px; cursor: pointer;
+    font-size: 13px; font-family: inherit; transition: all .15s;
+  }
+  .admin-reset-btn:hover { background: #3a1f1f; border-color: #7a3535; }
 </style>
 </head>
 <body>
@@ -202,6 +211,7 @@
         <button class="speed-btn" data-speed="10">10x</button>
       </div>
     </div>
+    <button class="admin-reset-btn" id="adminReset">↻ Сбросить прогресс</button>
   </div>
 </div>
 
@@ -215,24 +225,14 @@
   const CONVEYOR_PRICE = 0.05;
   const MIN_SCALE = 0.5, MAX_SCALE = 3;
 
-  // Направления: 0=вверх, 1=вправо, 2=вниз, 3=влево
-  // В canvas ось Y направлена вниз, поэтому "вверх" = dy=-1.
   const DX = [0, 1, 0, -1];
   const DY = [-1, 0, 1, 0];
-
-  // Угол для отрисовки стрелки, чтобы она указывала туда же, куда двигается.
-  // ctx.rotate(a) вращает по часовой стрелке, если a>0.
-  // Базовая стрелка в коде нарисована "вправо" (по +X).
-  // 0=вверх   -> нужно повернуть на -90° = -PI/2
-  // 1=вправо  -> 0
-  // 2=вниз    -> +PI/2
-  // 3=влево   -> PI
   const ANGLE = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
 
   const BLOCK_DEFS = {
-    spawner:  { name: 'Спавнер',      price: 0,              color: '#4a7cf7', svg: 'Square_Fabrick.svg' },
-    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, color: '#b8b8c0', svg: 'Conveer1.svg' },
-    seller:   { name: 'Блок продажи', price: 0,              color: '#4cc07a', svg: 'Sell_block.svg' }
+    spawner:  { name: 'Спавнер',      price: 0,              svg: 'Square_Fabrick.svg' },
+    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, svg: 'Conveer1.svg' },
+    seller:   { name: 'Блок продажи', price: 0,              svg: 'Sell_block.svg' }
   };
 
   let state = {
@@ -243,7 +243,6 @@
   };
 
   let admin = { infiniteMoney: false, infiniteBlocks: false, speed: 1 };
-
   let selectedType = null;
   let conveyorDir = 1;
   let spawnerDir = 1;
@@ -251,12 +250,8 @@
   let spawnerTimers = {};
   let images = {};
   let lastFrame = performance.now();
-
-  // Анимация поворота: key -> { displayAngle, targetAngle }
   let rotAnims = {};
-  // Всплывающие цены: {x, y, value, age, life}
   let popups = [];
-  // Анимация исчезновения кубика на продаже: {x, y, age, life}
   let dissolving = [];
 
   const canvas = document.getElementById('game');
@@ -264,10 +259,11 @@
   const balanceEl = document.getElementById('balance');
   const hotbarEl = document.getElementById('hotbar');
 
+  // === SVG ===
   function loadImage(name) {
     const img = new Image();
-    img.onload = () => { img.ready = true; };
-    img.onerror = () => { img.ready = false; };
+    img.onload = () => { img.ready = true; console.log('loaded', name); };
+    img.onerror = () => { img.ready = false; console.warn('failed to load', name); };
     img.src = name;
     return img;
   }
@@ -333,48 +329,39 @@
     c.closePath();
   }
 
-  // Стрелка, направленная "вправо" в локальной системе координат
+  // Стрелка НЕ по центру, а со стороны направления.
+  // Рисуем её в локальных координатах блока со смещением к "носу" (вправо по +X).
   function drawArrowRaw(px, py, s, angle, color) {
     ctx.save();
     ctx.translate(px + s / 2, py + s / 2);
     ctx.rotate(angle);
+    // смещаем к правому краю клетки (по направлению взгляда)
+    const offset = s * 0.28;
+    ctx.translate(offset, 0);
     ctx.fillStyle = color;
     ctx.beginPath();
-    const a = s * 0.22;
+    const a = s * 0.13; // уменьшенный размер
     ctx.moveTo(a, 0);
-    ctx.lineTo(-a * 0.5, -a * 0.7);
-    ctx.lineTo(-a * 0.5, a * 0.7);
+    ctx.lineTo(-a * 0.6, -a * 0.75);
+    ctx.lineTo(-a * 0.6, a * 0.75);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
 
-  function getDisplayAngle(key, targetDir) {
-    let anim = rotAnims[key];
-    if (!anim) {
-      anim = { display: ANGLE[targetDir], target: ANGLE[targetDir] };
-      rotAnims[key] = anim;
-      return anim.display;
-    }
-    anim.target = ANGLE[targetDir];
-    return anim.display;
-  }
-
   function updateRotAnims(dt) {
     for (const key in rotAnims) {
       const a = rotAnims[key];
-      // нормализуем разницу углов в диапазон [-PI, PI]
       let diff = a.target - a.display;
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
       if (Math.abs(diff) < 0.001) { a.display = a.target; continue; }
-      const speed = 12; // рад/сек
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), speed * dt);
-      a.display += step;
+      const speed = 12;
+      a.display += Math.sign(diff) * Math.min(Math.abs(diff), speed * dt);
     }
   }
 
-  function drawBlocks(dt) {
+  function drawBlocks() {
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
 
@@ -398,9 +385,8 @@
 
       const img = images[def.svg];
       if (img && img.ready) {
-        // Плавный поворот картинки конвейера/спавнера через canvas transform
         if (block.type === 'conveyor' || block.type === 'spawner') {
-          const angle = getDisplayAngle(key, block.dir);
+          const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
           ctx.save();
           ctx.translate(px + s / 2, py + s / 2);
           ctx.rotate(angle);
@@ -409,16 +395,19 @@
         } else {
           ctx.drawImage(img, px + pad + size * 0.12, py + pad + size * 0.12, size * 0.76, size * 0.76);
         }
+      } else {
+        // fallback — цветной квадратик, чтобы хоть что-то было видно
+        ctx.fillStyle = '#4a7cf7';
+        ctx.fillRect(px + pad + size * 0.2, py + pad + size * 0.2, size * 0.6, size * 0.6);
       }
 
       if (block.type === 'conveyor') {
-        // стрелка рисуется по тому же углу, что и картинка
         const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
-        drawArrowRaw(px, py, s, angle, 'rgba(125,211,252,0.85)');
+        drawArrowRaw(px, py, s, angle, 'rgba(125,211,252,0.9)');
       }
       if (block.type === 'spawner') {
         const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
-        drawArrowRaw(px, py, s, angle, 'rgba(245,180,0,0.9)');
+        drawArrowRaw(px, py, s, angle, 'rgba(245,180,0,0.95)');
       }
     }
   }
@@ -427,7 +416,6 @@
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
 
-    // обычные кубики
     for (const it of items) {
       const px = camX + it.x * s;
       const py = camY + it.y * s;
@@ -440,7 +428,6 @@
       ctx.stroke();
     }
 
-    // исчезающие кубики на продаже
     for (let i = dissolving.length - 1; i >= 0; i--) {
       const d = dissolving[i];
       d.age += dt;
@@ -452,18 +439,15 @@
       const baseSize = s * 0.5;
       const size = baseSize * (1 - t * 0.3);
       const alpha = 1 - t;
+      const lift = -t * s * 0.4;
 
       ctx.save();
       ctx.globalAlpha = alpha;
-      // лёгкое всплытие
-      const lift = -t * s * 0.4;
       ctx.fillStyle = '#f5b400';
       roundRect(ctx, px + s / 2 - size / 2, py + s / 2 - size / 2 + lift, size, size, Math.min(4, s * 0.1));
       ctx.fill();
       ctx.strokeStyle = '#c98f00';
       ctx.stroke();
-
-      // «искры» — уменьшающаяся яркая обводка
       ctx.globalAlpha = alpha * 0.8;
       ctx.strokeStyle = '#ffe27a';
       ctx.lineWidth = 2;
@@ -492,10 +476,11 @@
       ctx.globalAlpha = alpha;
       ctx.translate(px, py);
       ctx.scale(scale, scale);
-      ctx.font = 'bold ' + Math.max(12, s * 0.45) + 'px -apple-system, sans-serif';
+      // уменьшенный шрифт: было s*0.45, стало s*0.28
+      ctx.font = 'bold ' + Math.max(9, s * 0.28) + 'px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.5;
       ctx.strokeStyle = 'rgba(0,0,0,0.6)';
       ctx.strokeText(p.text, 0, 0);
       ctx.fillStyle = '#7dffa0';
@@ -515,10 +500,10 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(px + 1, py + 1, s - 2, s - 2);
     if (selectedType === 'conveyor') {
-      drawArrowRaw(px, py, s, ANGLE[conveyorDir], 'rgba(125,211,252,0.6)');
+      drawArrowRaw(px, py, s, ANGLE[conveyorDir], 'rgba(125,211,252,0.7)');
     }
     if (selectedType === 'spawner') {
-      drawArrowRaw(px, py, s, ANGLE[spawnerDir], 'rgba(245,180,0,0.7)');
+      drawArrowRaw(px, py, s, ANGLE[spawnerDir], 'rgba(245,180,0,0.8)');
     }
     ctx.lineWidth = 1;
   }
@@ -554,7 +539,6 @@
     state.blocks[key] = { type: selectedType, dir };
     if (selectedType === 'spawner') spawnerTimers[key] = performance.now();
 
-    // сразу задаём углы анимации для нового блока
     rotAnims[key] = { display: ANGLE[dir], target: ANGLE[dir] };
 
     state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
@@ -583,7 +567,6 @@
 
     updateRotAnims(realDt);
 
-    // спавн
     for (const key in state.blocks) {
       const b = state.blocks[key];
       if (b.type !== 'spawner') continue;
@@ -600,7 +583,6 @@
       }
     }
 
-    // движение
     for (let i = items.length - 1; i >= 0; i--) {
       const it = items[i];
       const cx = Math.round(it.x);
@@ -614,7 +596,6 @@
 
         if (block && block.type === 'seller') {
           if (!admin.infiniteMoney) state.balance += SELL_PRICE;
-          // запускаем анимацию исчезновения и всплывающую цену
           dissolving.push({ x: cx, y: cy, age: 0, life: 0.6 });
           popups.push({ x: cx, y: cy, age: 0, life: 1.1, text: '+$' + SELL_PRICE.toFixed(2) });
           items.splice(i, 1);
@@ -654,7 +635,7 @@
     const dtReal = Math.min(0.1, (now - lastFrame) / 1000) || 0.016;
     updateTick(now);
     drawGrid();
-    drawBlocks(dtReal);
+    drawBlocks();
     drawItems(dtReal);
     drawPopups(dtReal);
     drawPreview();
@@ -680,12 +661,18 @@
     }
     hotbarEl.classList.add('visible');
     hotbarEl.innerHTML = '';
-    state.hotbar.forEach(type => {
+    state.hotbar.forEach((type, idx) => {
       const def = BLOCK_DEFS[type];
       const div = document.createElement('div');
       div.className = 'hotbar-item';
       if (selectedType === type) div.classList.add('selected');
-      div.title = def.name;
+      div.title = def.name + ' (клавиша ' + (idx + 1) + ')';
+
+      const num = document.createElement('div');
+      num.className = 'num';
+      num.textContent = (idx + 1);
+      div.appendChild(num);
+
       const img = document.createElement('img');
       img.src = def.svg;
       div.appendChild(img);
@@ -763,16 +750,17 @@
     state.camera.y = e.clientY - wy * BASE_CELL * newScale;
   }, { passive: false });
 
-  // R — против часовой. dir: 0=вверх 1=вправо 2=вниз 3=влево
-  // против часовой: вверх(0) -> влево(3) -> вниз(2) -> вправо(1) -> вверх(0)
-  // (dir + 3) % 4 даёт именно это.
   window.addEventListener('keydown', e => {
+    // R — поворот против часовой
     if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
-      if (selectedType === 'spawner') {
-        spawnerDir = (spawnerDir + 3) % 4;
-      } else {
-        conveyorDir = (conveyorDir + 3) % 4;
-      }
+      if (selectedType === 'spawner') spawnerDir = (spawnerDir + 3) % 4;
+      else conveyorDir = (conveyorDir + 3) % 4;
+      return;
+    }
+    // 1–8 — выбор из хотбара
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 8 && state.hotbar[n - 1]) {
+      selectType(state.hotbar[n - 1]);
     }
   });
 
@@ -780,15 +768,17 @@
     el.addEventListener('click', () => selectType(el.dataset.type));
   });
 
-  document.getElementById('resetBtn').addEventListener('click', () => {
+  // === Сброс ===
+  function resetGame() {
     if (!confirm('Сбросить весь прогресс?')) return;
     localStorage.removeItem('factory_save');
     location.reload();
-  });
+  }
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+  document.getElementById('adminReset').addEventListener('click', resetGame);
 
   const adminPanel = document.getElementById('adminPanel');
   const adminHeader = document.getElementById('adminHeader');
-
   document.getElementById('adminToggle').addEventListener('click', () => {
     adminPanel.classList.toggle('visible');
   });
@@ -816,12 +806,10 @@
 
   const swMoney = document.getElementById('swMoney');
   const swLimits = document.getElementById('swLimits');
-
   swMoney.addEventListener('click', () => {
     admin.infiniteMoney = !admin.infiniteMoney;
     swMoney.classList.toggle('on', admin.infiniteMoney);
-    updateBalance();
-    updateShopState();
+    updateBalance(); updateShopState();
   });
   swLimits.addEventListener('click', () => {
     admin.infiniteBlocks = !admin.infiniteBlocks;
@@ -841,13 +829,10 @@
 
   function save() {
     localStorage.setItem('factory_save', JSON.stringify({
-      blocks: state.blocks,
-      balance: state.balance,
-      hotbar: state.hotbar,
-      camera: state.camera
+      blocks: state.blocks, balance: state.balance,
+      hotbar: state.hotbar, camera: state.camera
     }));
   }
-
   function load() {
     try {
       const raw = localStorage.getItem('factory_save');
@@ -857,7 +842,6 @@
       state.balance = data.balance || 0;
       state.hotbar = data.hotbar || [];
       if (data.camera) state.camera = data.camera;
-      // инициализация анимаций поворота и таймеров
       for (const key in state.blocks) {
         const b = state.blocks[key];
         rotAnims[key] = { display: ANGLE[b.dir] || 0, target: ANGLE[b.dir] || 0 };
@@ -874,13 +858,10 @@
       state.camera.y = window.innerHeight / 2 - (GRID_H * BASE_CELL) / 2;
       state.camera.scale = 1;
     }
-    updateBalance();
-    updateShopState();
-    renderHotbar();
+    updateBalance(); updateShopState(); renderHotbar();
     lastFrame = performance.now();
     requestAnimationFrame(loop);
   }
-
   init();
 })();
 </script>

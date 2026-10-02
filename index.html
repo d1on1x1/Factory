@@ -44,9 +44,7 @@
   }
   #adminToggle:hover { background: #1d2941; }
 
-  #shop {
-    top: 70px; left: 12px; width: 220px; padding: 12px;
-  }
+  #shop { top: 70px; left: 12px; width: 220px; padding: 12px; }
   #shop h3 {
     font-size: 15px; margin-bottom: 10px;
     display: flex; align-items: center; gap: 6px; color: #e6ebf5;
@@ -112,10 +110,7 @@
     cursor: move; display: flex; justify-content: space-between;
     align-items: center; color: #7dd3fc;
   }
-  #adminHeader .close {
-    cursor: pointer; color: #8a96ab; font-size: 16px;
-    line-height: 1; padding: 0 4px;
-  }
+  #adminHeader .close { cursor: pointer; color: #8a96ab; font-size: 16px; line-height: 1; padding: 0 4px; }
   #adminHeader .close:hover { color: #ff6b6b; }
   #adminBody { padding: 10px 12px; }
   .admin-row {
@@ -163,21 +158,21 @@
 <div id="shop" class="panel">
   <h3>🛒 Магазин</h3>
   <div class="shop-item" data-type="spawner">
-    <div class="icon"><img src="Square_Fabrick.svg" alt=""></div>
+    <div class="icon"><img id="iconSpawner" alt=""></div>
     <div class="info">
       <div class="name">Спавнер</div>
       <div class="meta">бесплатно · лимит: 1</div>
     </div>
   </div>
   <div class="shop-item" data-type="conveyor">
-    <div class="icon"><img src="Conveer1.svg" alt=""></div>
+    <div class="icon"><img id="iconConveyor" alt=""></div>
     <div class="info">
       <div class="name">Конвейер</div>
       <div class="meta">0.05 $ · без лимита</div>
     </div>
   </div>
   <div class="shop-item" data-type="seller">
-    <div class="icon"><img src="Sell_block.svg" alt=""></div>
+    <div class="icon"><img id="iconSeller" alt=""></div>
     <div class="info">
       <div class="name">Блок продажи</div>
       <div class="meta">бесплатно · лимит: 1</div>
@@ -217,6 +212,58 @@
 
 <script>
 (() => {
+  // ============================================================
+  // ВСТРОЕННЫЕ SVG (base64 data-URI). Исправлен xmlns.
+  // ============================================================
+
+  // Square.svg — маленький синий квадрат (не используется напрямую,
+  // оставлен на случай, если захочешь где-то показать)
+  const SVG_SQUARE = 'data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">' +
+    '<rect x="5" y="5" width="90" height="90" rx="20" fill="#2980B9"/>' +
+    '</svg>'
+  );
+
+  // Square_Fabrick.svg — спавнер (серый фон + оранжевый круг + стрелка)
+  const SVG_SPAWNER = 'data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">' +
+    '<rect width="500" height="500" fill="#808080"/>' +
+    '<circle cx="250" cy="250" r="225" fill="#FF7D1B"/>' +
+    '<path d="M250 120 L350 240 H290 V380 H210 V240 H150 Z" fill="#FEAE34" stroke-linejoin="round"/>' +
+    '</svg>'
+  );
+
+  // Conveer1.svg — конвейер (синий квадрат + 3 шеврона)
+  const SVG_CONVEYOR = 'data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">' +
+    '<rect x="25" y="25" width="450" height="450" rx="90" fill="#2980B9"/>' +
+    '<g fill="none" stroke="#1B4F72" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M 80,170 L 250,90 L 420,170"/>' +
+    '<path d="M 80,270 L 250,190 L 420,270"/>' +
+    '<path d="M 80,370 L 250,290 L 420,370"/>' +
+    '</g>' +
+    '</svg>'
+  );
+
+  // Sell_block.svg — блок продажи (зелёный квадрат + $)
+  const SVG_SELLER = 'data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">' +
+    '<rect x="25" y="25" width="450" height="450" rx="90" fill="#2ECC71"/>' +
+    '<g fill="#FFFFFF">' +
+    '<rect x="235" y="80" width="30" height="340" rx="10"/>' +
+    '<path d="M 330,175 C 330,120 170,120 170,175 C 170,235 330,235 330,305 C 330,365 170,365 170,310 L 170,295 A 20,20 0 0,1 190,275 L 200,275 A 20,20 0 0,1 220,295 C 220,325 280,325 280,305 C 280,265 120,265 120,185 C 120,120 280,120 280,165 L 280,180 A 20,20 0 0,1 260,200 L 250,200 A 20,20 0 0,1 230,180 C 230,145 170,145 170,175 C 170,195 210,205 250,215 C 300,225 330,245 330,275 A 20,20 0 0,1 330,275 Z"/>' +
+    '</g>' +
+    '</svg>'
+  );
+
+  // Прописываем иконки в магазин
+  document.getElementById('iconSpawner').src = SVG_SPAWNER;
+  document.getElementById('iconConveyor').src = SVG_CONVEYOR;
+  document.getElementById('iconSeller').src = SVG_SELLER;
+
+  // ============================================================
+  // Константы игры
+  // ============================================================
   const GRID_W = 100, GRID_H = 100;
   const BASE_CELL = 32;
   const SPAWN_INTERVAL = 1000;
@@ -230,9 +277,9 @@
   const ANGLE = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
 
   const BLOCK_DEFS = {
-    spawner:  { name: 'Спавнер',      price: 0,              svg: 'Square_Fabrick.svg' },
-    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, svg: 'Conveer1.svg' },
-    seller:   { name: 'Блок продажи', price: 0,              svg: 'Sell_block.svg' }
+    spawner:  { name: 'Спавнер',      price: 0,              src: SVG_SPAWNER },
+    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, src: SVG_CONVEYOR },
+    seller:   { name: 'Блок продажи', price: 0,              src: SVG_SELLER }
   };
 
   let state = {
@@ -259,15 +306,14 @@
   const balanceEl = document.getElementById('balance');
   const hotbarEl = document.getElementById('hotbar');
 
-  // === SVG ===
-  function loadImage(name) {
+  // Предзагрузка картинок из data-URI (работает всегда — не нужен сервер)
+  Object.values(BLOCK_DEFS).forEach(def => {
     const img = new Image();
-    img.onload = () => { img.ready = true; console.log('loaded', name); };
-    img.onerror = () => { img.ready = false; console.warn('failed to load', name); };
-    img.src = name;
-    return img;
-  }
-  Object.values(BLOCK_DEFS).forEach(def => { images[def.svg] = loadImage(def.svg); });
+    img.onload = () => { img.ready = true; };
+    img.onerror = () => { img.ready = false; };
+    img.src = def.src;
+    images[def.src] = img;
+  });
 
   function resize() {
     canvas.width = window.innerWidth * devicePixelRatio;
@@ -329,18 +375,15 @@
     c.closePath();
   }
 
-  // Стрелка НЕ по центру, а со стороны направления.
-  // Рисуем её в локальных координатах блока со смещением к "носу" (вправо по +X).
   function drawArrowRaw(px, py, s, angle, color) {
     ctx.save();
     ctx.translate(px + s / 2, py + s / 2);
     ctx.rotate(angle);
-    // смещаем к правому краю клетки (по направлению взгляда)
     const offset = s * 0.28;
     ctx.translate(offset, 0);
     ctx.fillStyle = color;
     ctx.beginPath();
-    const a = s * 0.13; // уменьшенный размер
+    const a = s * 0.13;
     ctx.moveTo(a, 0);
     ctx.lineTo(-a * 0.6, -a * 0.75);
     ctx.lineTo(-a * 0.6, a * 0.75);
@@ -376,6 +419,7 @@
       const pad = Math.max(1, s * 0.06);
       const size = s - pad * 2;
 
+      // фон-подложка
       ctx.fillStyle = '#1d2941';
       roundRect(ctx, px + pad, py + pad, size, size, Math.min(6, s * 0.12));
       ctx.fill();
@@ -383,7 +427,7 @@
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      const img = images[def.svg];
+      const img = images[def.src];
       if (img && img.ready) {
         if (block.type === 'conveyor' || block.type === 'spawner') {
           const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
@@ -396,7 +440,6 @@
           ctx.drawImage(img, px + pad + size * 0.12, py + pad + size * 0.12, size * 0.76, size * 0.76);
         }
       } else {
-        // fallback — цветной квадратик, чтобы хоть что-то было видно
         ctx.fillStyle = '#4a7cf7';
         ctx.fillRect(px + pad + size * 0.2, py + pad + size * 0.2, size * 0.6, size * 0.6);
       }
@@ -433,14 +476,12 @@
       d.age += dt;
       const t = d.age / d.life;
       if (t >= 1) { dissolving.splice(i, 1); continue; }
-
       const px = camX + d.x * s;
       const py = camY + d.y * s;
       const baseSize = s * 0.5;
       const size = baseSize * (1 - t * 0.3);
       const alpha = 1 - t;
       const lift = -t * s * 0.4;
-
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = '#f5b400';
@@ -460,23 +501,19 @@
   function drawPopups(dt) {
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
-
     for (let i = popups.length - 1; i >= 0; i--) {
       const p = popups[i];
       p.age += dt;
       const t = p.age / p.life;
       if (t >= 1) { popups.splice(i, 1); continue; }
-
       const px = camX + p.x * s + s / 2;
       const py = camY + p.y * s + s / 2 - t * s * 1.4;
       const alpha = 1 - t;
       const scale = 1 + (1 - t) * 0.15;
-
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.translate(px, py);
       ctx.scale(scale, scale);
-      // уменьшенный шрифт: было s*0.45, стало s*0.28
       ctx.font = 'bold ' + Math.max(9, s * 0.28) + 'px -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -499,12 +536,8 @@
     ctx.strokeStyle = '#4a7cf7';
     ctx.lineWidth = 2;
     ctx.strokeRect(px + 1, py + 1, s - 2, s - 2);
-    if (selectedType === 'conveyor') {
-      drawArrowRaw(px, py, s, ANGLE[conveyorDir], 'rgba(125,211,252,0.7)');
-    }
-    if (selectedType === 'spawner') {
-      drawArrowRaw(px, py, s, ANGLE[spawnerDir], 'rgba(245,180,0,0.8)');
-    }
+    if (selectedType === 'conveyor') drawArrowRaw(px, py, s, ANGLE[conveyorDir], 'rgba(125,211,252,0.7)');
+    if (selectedType === 'spawner') drawArrowRaw(px, py, s, ANGLE[spawnerDir], 'rgba(245,180,0,0.8)');
     ctx.lineWidth = 1;
   }
 
@@ -528,19 +561,15 @@
     const key = gx + ',' + gy;
     if (state.blocks[key]) return;
     if (!canPlace(selectedType)) return;
-
     const def = BLOCK_DEFS[selectedType];
     if (!admin.infiniteMoney && state.balance < def.price) return;
-
     if (!admin.infiniteMoney) state.balance -= def.price;
     const dir = selectedType === 'conveyor' ? conveyorDir
               : selectedType === 'spawner'  ? spawnerDir
               : 0;
     state.blocks[key] = { type: selectedType, dir };
     if (selectedType === 'spawner') spawnerTimers[key] = performance.now();
-
     rotAnims[key] = { display: ANGLE[dir], target: ANGLE[dir] };
-
     state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
     renderHotbar();
     updateBalance();
@@ -564,7 +593,6 @@
     lastFrame = now;
     const dt = realDt * admin.speed;
     const scaledNow = now * admin.speed;
-
     updateRotAnims(realDt);
 
     for (const key in state.blocks) {
@@ -588,12 +616,10 @@
       const cx = Math.round(it.x);
       const cy = Math.round(it.y);
       const atCell = Math.abs(it.x - cx) < 0.001 && Math.abs(it.y - cy) < 0.001;
-
       if (atCell) {
         it.x = cx; it.y = cy;
         const key = cx + ',' + cy;
         const block = state.blocks[key];
-
         if (block && block.type === 'seller') {
           if (!admin.infiniteMoney) state.balance += SELL_PRICE;
           dissolving.push({ x: cx, y: cy, age: 0, life: 0.6 });
@@ -603,7 +629,6 @@
           save();
           continue;
         }
-
         if (block && block.type === 'conveyor') {
           it.dir = block.dir;
           const dx = DX[block.dir], dy = DY[block.dir];
@@ -616,7 +641,6 @@
           }
           continue;
         }
-
         it.dir = -1;
       } else {
         const dx = DX[it.dir], dy = DY[it.dir];
@@ -649,16 +673,12 @@
 
   function updateShopState() {
     document.querySelectorAll('.shop-item').forEach(el => {
-      const type = el.dataset.type;
-      el.classList.toggle('disabled', !canPlace(type));
+      el.classList.toggle('disabled', !canPlace(el.dataset.type));
     });
   }
 
   function renderHotbar() {
-    if (state.hotbar.length === 0) {
-      hotbarEl.classList.remove('visible');
-      return;
-    }
+    if (state.hotbar.length === 0) { hotbarEl.classList.remove('visible'); return; }
     hotbarEl.classList.add('visible');
     hotbarEl.innerHTML = '';
     state.hotbar.forEach((type, idx) => {
@@ -667,14 +687,11 @@
       div.className = 'hotbar-item';
       if (selectedType === type) div.classList.add('selected');
       div.title = def.name + ' (клавиша ' + (idx + 1) + ')';
-
       const num = document.createElement('div');
-      num.className = 'num';
-      num.textContent = (idx + 1);
+      num.className = 'num'; num.textContent = (idx + 1);
       div.appendChild(num);
-
       const img = document.createElement('img');
-      img.src = def.svg;
+      img.src = def.src;
       div.appendChild(img);
       const label = document.createElement('div');
       label.className = 'label';
@@ -699,12 +716,10 @@
 
   canvas.addEventListener('mousedown', e => {
     if (e.button === 0) {
-      isDown = true;
-      isDragging = false;
+      isDown = true; isDragging = false;
       dragStart = { x: e.clientX, y: e.clientY, camX: state.camera.x, camY: state.camera.y };
     }
   });
-
   window.addEventListener('mousemove', e => {
     mouseGrid = screenToGrid(e.clientX, e.clientY);
     if (isDown && dragStart) {
@@ -718,25 +733,20 @@
       }
     }
   });
-
   window.addEventListener('mouseup', e => {
     if (e.button !== 0) return;
     if (isDown && !isDragging && e.target === canvas) {
       const g = screenToGrid(e.clientX, e.clientY);
       placeBlock(g.x, g.y);
     }
-    isDown = false;
-    isDragging = false;
-    dragStart = null;
+    isDown = false; isDragging = false; dragStart = null;
     canvas.classList.remove('dragging');
   });
-
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
     const g = screenToGrid(e.clientX, e.clientY);
     removeBlock(g.x, g.y);
   });
-
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const oldScale = state.camera.scale;
@@ -751,24 +761,19 @@
   }, { passive: false });
 
   window.addEventListener('keydown', e => {
-    // R — поворот против часовой
     if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
       if (selectedType === 'spawner') spawnerDir = (spawnerDir + 3) % 4;
       else conveyorDir = (conveyorDir + 3) % 4;
       return;
     }
-    // 1–8 — выбор из хотбара
     const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= 8 && state.hotbar[n - 1]) {
-      selectType(state.hotbar[n - 1]);
-    }
+    if (n >= 1 && n <= 8 && state.hotbar[n - 1]) selectType(state.hotbar[n - 1]);
   });
 
   document.querySelectorAll('.shop-item').forEach(el => {
     el.addEventListener('click', () => selectType(el.dataset.type));
   });
 
-  // === Сброс ===
   function resetGame() {
     if (!confirm('Сбросить весь прогресс?')) return;
     localStorage.removeItem('factory_save');
@@ -779,26 +784,19 @@
 
   const adminPanel = document.getElementById('adminPanel');
   const adminHeader = document.getElementById('adminHeader');
-  document.getElementById('adminToggle').addEventListener('click', () => {
-    adminPanel.classList.toggle('visible');
-  });
-  document.getElementById('adminClose').addEventListener('click', () => {
-    adminPanel.classList.remove('visible');
-  });
+  document.getElementById('adminToggle').addEventListener('click', () => adminPanel.classList.toggle('visible'));
+  document.getElementById('adminClose').addEventListener('click', () => adminPanel.classList.remove('visible'));
 
   let adminDrag = null;
   adminHeader.addEventListener('mousedown', e => {
     if (e.target.classList.contains('close')) return;
-    adminDrag = {
-      offsetX: e.clientX - adminPanel.offsetLeft,
-      offsetY: e.clientY - adminPanel.offsetTop
-    };
+    adminDrag = { offsetX: e.clientX - adminPanel.offsetLeft, offsetY: e.clientY - adminPanel.offsetTop };
     e.preventDefault();
   });
   window.addEventListener('mousemove', e => {
     if (adminDrag) {
       adminPanel.style.left = (e.clientX - adminDrag.offsetX) + 'px';
-      adminPanel.style.top  = (e.clientY - adminDrag.offsetY) + 'px';
+      adminPanel.style.top = (e.clientY - adminDrag.offsetY) + 'px';
       adminPanel.style.right = 'auto';
     }
   });
@@ -816,7 +814,6 @@
     swLimits.classList.toggle('on', admin.infiniteBlocks);
     updateShopState();
   });
-
   document.querySelectorAll('.speed-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       admin.speed = parseFloat(btn.dataset.speed);

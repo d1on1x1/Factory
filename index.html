@@ -25,77 +25,52 @@
     padding: 10px 14px;
     color: #e6ebf5;
   }
-
   #balance {
     top: 12px; left: 12px;
     font-size: 18px; font-weight: 600;
     min-width: 90px; text-align: center;
     color: #7dd3fc;
   }
-
   #resetBtn {
     top: 12px; right: 12px;
-    cursor: pointer;
-    font-size: 14px;
-    border: 1px solid #22304a;
-    background: #161f31;
-    padding: 10px 16px;
-    border-radius: 6px;
-    color: #e6ebf5;
-    transition: background .15s;
-    font-family: inherit;
+    cursor: pointer; font-size: 14px;
+    border: 1px solid #22304a; background: #161f31;
+    padding: 10px 16px; border-radius: 6px;
+    color: #e6ebf5; transition: background .15s; font-family: inherit;
   }
   #resetBtn:hover { background: #1d2941; }
-
   #adminToggle {
-    top: 12px; right: 110px;
-    cursor: pointer;
-    font-size: 13px;
-    border: 1px solid #22304a;
-    background: #161f31;
-    padding: 10px 12px;
-    border-radius: 6px;
-    color: #7dd3fc;
-    font-family: inherit;
+    top: 12px; right: 110px; cursor: pointer;
+    font-size: 13px; border: 1px solid #22304a;
+    background: #161f31; padding: 10px 12px;
+    border-radius: 6px; color: #7dd3fc; font-family: inherit;
   }
   #adminToggle:hover { background: #1d2941; }
 
   #shop {
     top: 70px; left: 12px;
-    width: 220px;
-    padding: 12px;
+    width: 220px; padding: 12px;
   }
   #shop h3 {
-    font-size: 15px;
-    margin-bottom: 10px;
-    display: flex; align-items: center; gap: 6px;
-    color: #e6ebf5;
+    font-size: 15px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px; color: #e6ebf5;
   }
   .shop-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px;
-    border: 1px solid #22304a;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: all .15s;
-    background: #121a2a;
+    padding: 8px 10px; border: 1px solid #22304a;
+    border-radius: 6px; margin-bottom: 8px;
+    cursor: pointer; transition: all .15s; background: #121a2a;
   }
   .shop-item:last-child { margin-bottom: 0; }
   .shop-item:hover { background: #1a2438; border-color: #2f4160; }
   .shop-item.selected {
-    background: #1a2c50;
-    border-color: #4a7cf7;
+    background: #1a2c50; border-color: #4a7cf7;
     box-shadow: 0 0 0 1px #4a7cf7 inset;
   }
-  .shop-item.disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
+  .shop-item.disabled { opacity: 0.35; cursor: not-allowed; }
   .shop-item .icon {
     width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .shop-item .icon img { width: 32px; height: 32px; }
   .shop-item .info { flex: 1; min-width: 0; }
@@ -103,129 +78,71 @@
   .shop-item .meta { font-size: 11px; color: #8a96ab; margin-top: 2px; }
 
   #hotbar {
-    position: absolute;
-    bottom: 16px; left: 50%;
+    position: absolute; bottom: 16px; left: 50%;
     transform: translateX(-50%);
-    background: #161f31;
-    border: 1px solid #22304a;
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    padding: 8px 10px;
-    display: none;
-    gap: 8px;
-    align-items: center;
+    background: #161f31; border: 1px solid #22304a;
+    border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    padding: 8px 10px; display: none; gap: 8px; align-items: center;
   }
   #hotbar.visible { display: flex; }
   .hotbar-item {
-    width: 56px; height: 56px;
-    border-radius: 6px;
-    border: 1px solid #22304a;
-    background: #121a2a;
-    cursor: pointer;
-    display: flex; flex-direction: column;
+    width: 56px; height: 56px; border-radius: 6px;
+    border: 1px solid #22304a; background: #121a2a;
+    cursor: pointer; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    transition: all .15s;
-    padding: 4px;
-    color: #e6ebf5;
+    transition: all .15s; padding: 4px; color: #e6ebf5;
   }
   .hotbar-item img { width: 30px; height: 30px; }
   .hotbar-item .label { font-size: 9px; color: #8a96ab; margin-top: 2px; }
   .hotbar-item:hover { background: #1a2438; }
-  .hotbar-item.selected {
-    background: #1a2c50;
-    border-color: #4a7cf7;
-  }
+  .hotbar-item.selected { background: #1a2c50; border-color: #4a7cf7; }
 
-  /* === Админ-панель === */
   #adminPanel {
-    position: absolute;
-    top: 70px; right: 12px;
-    width: 230px;
-    background: #161f31;
-    border: 1px solid #4a7cf7;
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    color: #e6ebf5;
-    z-index: 1000;
-    display: none;
+    position: absolute; top: 70px; right: 12px; width: 230px;
+    background: #161f31; border: 1px solid #4a7cf7;
+    border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    color: #e6ebf5; z-index: 1000; display: none;
   }
   #adminPanel.visible { display: block; }
   #adminHeader {
-    padding: 8px 12px;
-    background: #1a2c50;
+    padding: 8px 12px; background: #1a2c50;
     border-bottom: 1px solid #22304a;
-    border-radius: 6px 6px 0 0;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: move;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #7dd3fc;
+    border-radius: 6px 6px 0 0; font-size: 13px; font-weight: 600;
+    cursor: move; display: flex; justify-content: space-between;
+    align-items: center; color: #7dd3fc;
   }
   #adminHeader .close {
-    cursor: pointer;
-    color: #8a96ab;
-    font-size: 16px;
-    line-height: 1;
-    padding: 0 4px;
+    cursor: pointer; color: #8a96ab; font-size: 16px;
+    line-height: 1; padding: 0 4px;
   }
   #adminHeader .close:hover { color: #ff6b6b; }
   #adminBody { padding: 10px 12px; }
   .admin-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
-    font-size: 13px;
-    gap: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0; font-size: 13px; gap: 8px;
   }
   .switch {
-    position: relative;
-    width: 38px; height: 20px;
-    background: #22304a;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background .2s;
-    flex-shrink: 0;
+    position: relative; width: 38px; height: 20px;
+    background: #22304a; border-radius: 10px;
+    cursor: pointer; transition: background .2s; flex-shrink: 0;
   }
   .switch::after {
-    content: '';
-    position: absolute;
-    top: 2px; left: 2px;
-    width: 16px; height: 16px;
-    background: #8a96ab;
-    border-radius: 50%;
-    transition: all .2s;
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; background: #8a96ab;
+    border-radius: 50%; transition: all .2s;
   }
   .switch.on { background: #4a7cf7; }
   .switch.on::after { left: 20px; background: #fff; }
 
-  .speed-row {
-    display: flex;
-    gap: 4px;
-    padding-top: 6px;
-    flex-wrap: wrap;
-  }
+  .speed-row { display: flex; gap: 4px; padding-top: 6px; flex-wrap: wrap; }
   .speed-btn {
-    flex: 1;
-    min-width: 36px;
-    padding: 6px 0;
-    border: 1px solid #22304a;
-    background: #121a2a;
-    color: #e6ebf5;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-family: inherit;
-    transition: all .15s;
+    flex: 1; min-width: 36px; padding: 6px 0;
+    border: 1px solid #22304a; background: #121a2a;
+    color: #e6ebf5; border-radius: 4px; cursor: pointer;
+    font-size: 12px; font-family: inherit; transition: all .15s;
   }
   .speed-btn:hover { background: #1a2438; }
-  .speed-btn.active {
-    background: #4a7cf7;
-    border-color: #4a7cf7;
-    color: #fff;
-  }
+  .speed-btn.active { background: #4a7cf7; border-color: #4a7cf7; color: #fff; }
 </style>
 </head>
 <body>
@@ -298,6 +215,20 @@
   const CONVEYOR_PRICE = 0.05;
   const MIN_SCALE = 0.5, MAX_SCALE = 3;
 
+  // Направления: 0=вверх, 1=вправо, 2=вниз, 3=влево
+  // В canvas ось Y направлена вниз, поэтому "вверх" = dy=-1.
+  const DX = [0, 1, 0, -1];
+  const DY = [-1, 0, 1, 0];
+
+  // Угол для отрисовки стрелки, чтобы она указывала туда же, куда двигается.
+  // ctx.rotate(a) вращает по часовой стрелке, если a>0.
+  // Базовая стрелка в коде нарисована "вправо" (по +X).
+  // 0=вверх   -> нужно повернуть на -90° = -PI/2
+  // 1=вправо  -> 0
+  // 2=вниз    -> +PI/2
+  // 3=влево   -> PI
+  const ANGLE = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
+
   const BLOCK_DEFS = {
     spawner:  { name: 'Спавнер',      price: 0,              color: '#4a7cf7', svg: 'Square_Fabrick.svg' },
     conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, color: '#b8b8c0', svg: 'Conveer1.svg' },
@@ -314,19 +245,25 @@
   let admin = { infiniteMoney: false, infiniteBlocks: false, speed: 1 };
 
   let selectedType = null;
-  let conveyorDir = 1;   // 1=right по умолчанию
+  let conveyorDir = 1;
   let spawnerDir = 1;
   let items = [];
   let spawnerTimers = {};
   let images = {};
   let lastFrame = performance.now();
 
+  // Анимация поворота: key -> { displayAngle, targetAngle }
+  let rotAnims = {};
+  // Всплывающие цены: {x, y, value, age, life}
+  let popups = [];
+  // Анимация исчезновения кубика на продаже: {x, y, age, life}
+  let dissolving = [];
+
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const balanceEl = document.getElementById('balance');
   const hotbarEl = document.getElementById('hotbar');
 
-  // === SVG ===
   function loadImage(name) {
     const img = new Image();
     img.onload = () => { img.ready = true; };
@@ -336,7 +273,6 @@
   }
   Object.values(BLOCK_DEFS).forEach(def => { images[def.svg] = loadImage(def.svg); });
 
-  // === Canvas ===
   function resize() {
     canvas.width = window.innerWidth * devicePixelRatio;
     canvas.height = window.innerHeight * devicePixelRatio;
@@ -355,7 +291,6 @@
     };
   }
 
-  // === Отрисовка ===
   function drawGrid() {
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
@@ -363,7 +298,6 @@
 
     ctx.fillStyle = '#0c111b';
     ctx.fillRect(0, 0, W, H);
-
     const fieldW = GRID_W * s, fieldH = GRID_H * s;
     ctx.fillStyle = '#161f31';
     ctx.fillRect(camX, camY, fieldW, fieldH);
@@ -399,10 +333,11 @@
     c.closePath();
   }
 
-  function drawArrow(px, py, s, dir, color) {
+  // Стрелка, направленная "вправо" в локальной системе координат
+  function drawArrowRaw(px, py, s, angle, color) {
     ctx.save();
     ctx.translate(px + s / 2, py + s / 2);
-    ctx.rotate(dir * Math.PI / 2);
+    ctx.rotate(angle);
     ctx.fillStyle = color;
     ctx.beginPath();
     const a = s * 0.22;
@@ -414,7 +349,32 @@
     ctx.restore();
   }
 
-  function drawBlocks() {
+  function getDisplayAngle(key, targetDir) {
+    let anim = rotAnims[key];
+    if (!anim) {
+      anim = { display: ANGLE[targetDir], target: ANGLE[targetDir] };
+      rotAnims[key] = anim;
+      return anim.display;
+    }
+    anim.target = ANGLE[targetDir];
+    return anim.display;
+  }
+
+  function updateRotAnims(dt) {
+    for (const key in rotAnims) {
+      const a = rotAnims[key];
+      // нормализуем разницу углов в диапазон [-PI, PI]
+      let diff = a.target - a.display;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      if (Math.abs(diff) < 0.001) { a.display = a.target; continue; }
+      const speed = 12; // рад/сек
+      const step = Math.sign(diff) * Math.min(Math.abs(diff), speed * dt);
+      a.display += step;
+    }
+  }
+
+  function drawBlocks(dt) {
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
 
@@ -438,21 +398,36 @@
 
       const img = images[def.svg];
       if (img && img.ready) {
-        ctx.drawImage(img, px + pad + size * 0.12, py + pad + size * 0.12, size * 0.76, size * 0.76);
+        // Плавный поворот картинки конвейера/спавнера через canvas transform
+        if (block.type === 'conveyor' || block.type === 'spawner') {
+          const angle = getDisplayAngle(key, block.dir);
+          ctx.save();
+          ctx.translate(px + s / 2, py + s / 2);
+          ctx.rotate(angle);
+          ctx.drawImage(img, -size * 0.38, -size * 0.38, size * 0.76, size * 0.76);
+          ctx.restore();
+        } else {
+          ctx.drawImage(img, px + pad + size * 0.12, py + pad + size * 0.12, size * 0.76, size * 0.76);
+        }
       }
 
       if (block.type === 'conveyor') {
-        drawArrow(px, py, s, block.dir, 'rgba(125,211,252,0.85)');
+        // стрелка рисуется по тому же углу, что и картинка
+        const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
+        drawArrowRaw(px, py, s, angle, 'rgba(125,211,252,0.85)');
       }
       if (block.type === 'spawner') {
-        drawArrow(px, py, s, block.dir, 'rgba(245,180,0,0.9)');
+        const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
+        drawArrowRaw(px, py, s, angle, 'rgba(245,180,0,0.9)');
       }
     }
   }
 
-  function drawItems() {
+  function drawItems(dt) {
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
+
+    // обычные кубики
     for (const it of items) {
       const px = camX + it.x * s;
       const py = camY + it.y * s;
@@ -463,6 +438,69 @@
       ctx.fill();
       ctx.strokeStyle = '#c98f00';
       ctx.stroke();
+    }
+
+    // исчезающие кубики на продаже
+    for (let i = dissolving.length - 1; i >= 0; i--) {
+      const d = dissolving[i];
+      d.age += dt;
+      const t = d.age / d.life;
+      if (t >= 1) { dissolving.splice(i, 1); continue; }
+
+      const px = camX + d.x * s;
+      const py = camY + d.y * s;
+      const baseSize = s * 0.5;
+      const size = baseSize * (1 - t * 0.3);
+      const alpha = 1 - t;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      // лёгкое всплытие
+      const lift = -t * s * 0.4;
+      ctx.fillStyle = '#f5b400';
+      roundRect(ctx, px + s / 2 - size / 2, py + s / 2 - size / 2 + lift, size, size, Math.min(4, s * 0.1));
+      ctx.fill();
+      ctx.strokeStyle = '#c98f00';
+      ctx.stroke();
+
+      // «искры» — уменьшающаяся яркая обводка
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.strokeStyle = '#ffe27a';
+      ctx.lineWidth = 2;
+      roundRect(ctx, px + s / 2 - size / 2 - t * 6, py + s / 2 - size / 2 + lift - t * 6, size + t * 12, size + t * 12, Math.min(6, s * 0.15));
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawPopups(dt) {
+    const s = BASE_CELL * state.camera.scale;
+    const camX = state.camera.x, camY = state.camera.y;
+
+    for (let i = popups.length - 1; i >= 0; i--) {
+      const p = popups[i];
+      p.age += dt;
+      const t = p.age / p.life;
+      if (t >= 1) { popups.splice(i, 1); continue; }
+
+      const px = camX + p.x * s + s / 2;
+      const py = camY + p.y * s + s / 2 - t * s * 1.4;
+      const alpha = 1 - t;
+      const scale = 1 + (1 - t) * 0.15;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(px, py);
+      ctx.scale(scale, scale);
+      ctx.font = 'bold ' + Math.max(12, s * 0.45) + 'px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.strokeText(p.text, 0, 0);
+      ctx.fillStyle = '#7dffa0';
+      ctx.fillText(p.text, 0, 0);
+      ctx.restore();
     }
   }
 
@@ -477,15 +515,14 @@
     ctx.lineWidth = 2;
     ctx.strokeRect(px + 1, py + 1, s - 2, s - 2);
     if (selectedType === 'conveyor') {
-      drawArrow(px, py, s, conveyorDir, 'rgba(125,211,252,0.6)');
+      drawArrowRaw(px, py, s, ANGLE[conveyorDir], 'rgba(125,211,252,0.6)');
     }
     if (selectedType === 'spawner') {
-      drawArrow(px, py, s, spawnerDir, 'rgba(245,180,0,0.7)');
+      drawArrowRaw(px, py, s, ANGLE[spawnerDir], 'rgba(245,180,0,0.7)');
     }
     ctx.lineWidth = 1;
   }
 
-  // === Логика ===
   function countType(type) {
     let n = 0;
     for (const k in state.blocks) if (state.blocks[k].type === type) n++;
@@ -511,15 +548,14 @@
     if (!admin.infiniteMoney && state.balance < def.price) return;
 
     if (!admin.infiniteMoney) state.balance -= def.price;
-    state.blocks[key] = {
-      type: selectedType,
-      dir: selectedType === 'conveyor' ? conveyorDir
-         : selectedType === 'spawner'  ? spawnerDir
-         : 0
-    };
-    if (selectedType === 'spawner') {
-      spawnerTimers[key] = performance.now();
-    }
+    const dir = selectedType === 'conveyor' ? conveyorDir
+              : selectedType === 'spawner'  ? spawnerDir
+              : 0;
+    state.blocks[key] = { type: selectedType, dir };
+    if (selectedType === 'spawner') spawnerTimers[key] = performance.now();
+
+    // сразу задаём углы анимации для нового блока
+    rotAnims[key] = { display: ANGLE[dir], target: ANGLE[dir] };
 
     state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
     renderHotbar();
@@ -533,6 +569,7 @@
     if (!state.blocks[key]) return;
     const type = state.blocks[key].type;
     delete state.blocks[key];
+    delete rotAnims[key];
     if (type === 'spawner') delete spawnerTimers[key];
     updateShopState();
     save();
@@ -544,7 +581,9 @@
     const dt = realDt * admin.speed;
     const scaledNow = now * admin.speed;
 
-    // === Спавн ===
+    updateRotAnims(realDt);
+
+    // спавн
     for (const key in state.blocks) {
       const b = state.blocks[key];
       if (b.type !== 'spawner') continue;
@@ -552,8 +591,7 @@
       if (scaledNow - spawnerTimers[key] >= SPAWN_INTERVAL) {
         spawnerTimers[key] = scaledNow;
         const [x, y] = key.split(',').map(Number);
-        const dx = [0, 1, 0, -1][b.dir];
-        const dy = [-1, 0, 1, 0][b.dir];
+        const dx = DX[b.dir], dy = DY[b.dir];
         const tx = x + dx, ty = y + dy;
         if (tx < 0 || ty < 0 || tx >= GRID_W || ty >= GRID_H) continue;
         if (!items.some(it => Math.round(it.x) === tx && Math.round(it.y) === ty)) {
@@ -562,7 +600,7 @@
       }
     }
 
-    // === Движение ===
+    // движение
     for (let i = items.length - 1; i >= 0; i--) {
       const it = items[i];
       const cx = Math.round(it.x);
@@ -576,6 +614,9 @@
 
         if (block && block.type === 'seller') {
           if (!admin.infiniteMoney) state.balance += SELL_PRICE;
+          // запускаем анимацию исчезновения и всплывающую цену
+          dissolving.push({ x: cx, y: cy, age: 0, life: 0.6 });
+          popups.push({ x: cx, y: cy, age: 0, life: 1.1, text: '+$' + SELL_PRICE.toFixed(2) });
           items.splice(i, 1);
           updateBalance();
           save();
@@ -584,8 +625,7 @@
 
         if (block && block.type === 'conveyor') {
           it.dir = block.dir;
-          const dx = [0, 1, 0, -1][block.dir];
-          const dy = [-1, 0, 1, 0][block.dir];
+          const dx = DX[block.dir], dy = DY[block.dir];
           const nx = cx + dx, ny = cy + dy;
           if (nx < 0 || ny < 0 || nx >= GRID_W || ny >= GRID_H) continue;
           const nblock = state.blocks[nx + ',' + ny];
@@ -598,8 +638,7 @@
 
         it.dir = -1;
       } else {
-        const dx = [0, 1, 0, -1][it.dir];
-        const dy = [-1, 0, 1, 0][it.dir];
+        const dx = DX[it.dir], dy = DY[it.dir];
         if (dx === 0 && dy === 0) { it.dir = -1; continue; }
         it.x += dx * dt / CONVEYOR_SPEED;
         it.y += dy * dt / CONVEYOR_SPEED;
@@ -612,15 +651,16 @@
   }
 
   function loop(now) {
+    const dtReal = Math.min(0.1, (now - lastFrame) / 1000) || 0.016;
     updateTick(now);
     drawGrid();
-    drawBlocks();
-    drawItems();
+    drawBlocks(dtReal);
+    drawItems(dtReal);
+    drawPopups(dtReal);
     drawPreview();
     requestAnimationFrame(loop);
   }
 
-  // === UI ===
   function updateBalance() {
     if (admin.infiniteMoney) { balanceEl.textContent = '∞ $'; return; }
     balanceEl.textContent = '$' + state.balance.toFixed(2);
@@ -667,7 +707,6 @@
     renderHotbar();
   }
 
-  // === Ввод ===
   let isDown = false, isDragging = false, dragStart = null;
   let mouseGrid = { x: -1, y: -1 };
 
@@ -724,9 +763,9 @@
     state.camera.y = e.clientY - wy * BASE_CELL * newScale;
   }, { passive: false });
 
-  // R — вращение ПРОТИВ часовой
-  // dir: 0=вверх, 1=вправо, 2=вниз, 3=влево.
-  // Против часовой: вверх(0) -> влево(3) -> вниз(2) -> вправо(1) -> вверх(0)
+  // R — против часовой. dir: 0=вверх 1=вправо 2=вниз 3=влево
+  // против часовой: вверх(0) -> влево(3) -> вниз(2) -> вправо(1) -> вверх(0)
+  // (dir + 3) % 4 даёт именно это.
   window.addEventListener('keydown', e => {
     if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
       if (selectedType === 'spawner') {
@@ -737,19 +776,16 @@
     }
   });
 
-  // === Магазин ===
   document.querySelectorAll('.shop-item').forEach(el => {
     el.addEventListener('click', () => selectType(el.dataset.type));
   });
 
-  // === Сброс ===
   document.getElementById('resetBtn').addEventListener('click', () => {
     if (!confirm('Сбросить весь прогресс?')) return;
     localStorage.removeItem('factory_save');
     location.reload();
   });
 
-  // === Админ-панель ===
   const adminPanel = document.getElementById('adminPanel');
   const adminHeader = document.getElementById('adminHeader');
 
@@ -793,19 +829,16 @@
     updateShopState();
   });
 
-  // Скорость
   document.querySelectorAll('.speed-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       admin.speed = parseFloat(btn.dataset.speed);
       document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      // сбросим таймеры спавнеров, чтобы не было "прыжка"
       const now = performance.now() * admin.speed;
       for (const key in spawnerTimers) spawnerTimers[key] = now;
     });
   });
 
-  // === Сохранение ===
   function save() {
     localStorage.setItem('factory_save', JSON.stringify({
       blocks: state.blocks,
@@ -824,8 +857,11 @@
       state.balance = data.balance || 0;
       state.hotbar = data.hotbar || [];
       if (data.camera) state.camera = data.camera;
+      // инициализация анимаций поворота и таймеров
       for (const key in state.blocks) {
-        if (state.blocks[key].type === 'spawner') spawnerTimers[key] = performance.now();
+        const b = state.blocks[key];
+        rotAnims[key] = { display: ANGLE[b.dir] || 0, target: ANGLE[b.dir] || 0 };
+        if (b.type === 'spawner') spawnerTimers[key] = performance.now();
       }
       return true;
     } catch (e) { console.warn('Load error', e); return false; }

@@ -9,41 +9,43 @@
     width: 100%; height: 100%;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #ececef;
-    color: #2a2a2a;
+    background: #0c111b;
+    color: #e6ebf5;
     user-select: none;
   }
-  #game { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+  #game { display: block; width: 100vw; height: 100vh; cursor: crosshair; position: fixed; inset: 0; }
   #game.dragging { cursor: grabbing; }
 
   .panel {
     position: absolute;
-    background: #ffffff;
+    background: #161f31;
+    border: 1px solid #22304a;
     border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     padding: 10px 14px;
+    color: #e6ebf5;
   }
 
   #balance {
     top: 12px; left: 12px;
     font-size: 18px; font-weight: 600;
     min-width: 90px; text-align: center;
+    color: #7dd3fc;
   }
 
   #resetBtn {
     top: 12px; right: 12px;
     cursor: pointer;
     font-size: 14px;
-    border: none;
-    background: #fff;
+    border: 1px solid #22304a;
+    background: #161f31;
     padding: 10px 16px;
     border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    color: #e6ebf5;
     transition: background .15s;
     font-family: inherit;
-    color: #2a2a2a;
   }
-  #resetBtn:hover { background: #f5f5f7; }
+  #resetBtn:hover { background: #1d2941; }
 
   #shop {
     top: 70px; left: 12px;
@@ -54,25 +56,27 @@
     font-size: 15px;
     margin-bottom: 10px;
     display: flex; align-items: center; gap: 6px;
+    color: #e6ebf5;
   }
   .shop-item {
     display: flex; align-items: center; gap: 10px;
     padding: 8px 10px;
-    border: 1px solid #e5e5e8;
+    border: 1px solid #22304a;
     border-radius: 6px;
     margin-bottom: 8px;
     cursor: pointer;
     transition: all .15s;
-    background: #fff;
+    background: #121a2a;
   }
   .shop-item:last-child { margin-bottom: 0; }
-  .shop-item:hover { background: #f7f7fa; }
+  .shop-item:hover { background: #1a2438; border-color: #2f4160; }
   .shop-item.selected {
-    background: #e8f0fe;
+    background: #1a2c50;
     border-color: #4a7cf7;
+    box-shadow: 0 0 0 1px #4a7cf7 inset;
   }
   .shop-item.disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
   }
@@ -84,16 +88,17 @@
   }
   .shop-item .icon img { width: 28px; height: 28px; }
   .shop-item .info { flex: 1; min-width: 0; }
-  .shop-item .name { font-size: 13px; font-weight: 600; }
-  .shop-item .meta { font-size: 11px; color: #888; margin-top: 2px; }
+  .shop-item .name { font-size: 13px; font-weight: 600; color: #e6ebf5; }
+  .shop-item .meta { font-size: 11px; color: #8a96ab; margin-top: 2px; }
 
   #hotbar {
     position: absolute;
     bottom: 16px; left: 50%;
     transform: translateX(-50%);
-    background: #ffffff;
+    background: #161f31;
+    border: 1px solid #22304a;
     border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     padding: 8px 10px;
     display: none;
     gap: 8px;
@@ -103,20 +108,21 @@
   .hotbar-item {
     width: 56px; height: 56px;
     border-radius: 6px;
-    border: 1px solid #e5e5e8;
-    background: #fff;
+    border: 1px solid #22304a;
+    background: #121a2a;
     cursor: pointer;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     font-size: 22px;
     transition: all .15s;
     padding: 4px;
+    color: #e6ebf5;
   }
   .hotbar-item img { width: 28px; height: 28px; }
-  .hotbar-item .label { font-size: 9px; color: #666; margin-top: 1px; }
-  .hotbar-item:hover { background: #f7f7fa; }
+  .hotbar-item .label { font-size: 9px; color: #8a96ab; margin-top: 1px; }
+  .hotbar-item:hover { background: #1a2438; }
   .hotbar-item.selected {
-    background: #e8f0fe;
+    background: #1a2c50;
     border-color: #4a7cf7;
   }
 </style>
@@ -158,8 +164,8 @@
   // === Константы ===
   const GRID_W = 100, GRID_H = 100;
   const BASE_CELL = 32;
-  const SPAWN_INTERVAL = 1000;      // мс
-  const CONVEYOR_SPEED = 0.5;       // сек на клетку (1 клетка за 0.5 сек = 2 клетки/сек)
+  const SPAWN_INTERVAL = 1000;
+  const CONVEYOR_SPEED = 0.5;
   const SELL_PRICE = 0.01;
   const CONVEYOR_PRICE = 0.05;
   const MIN_SCALE = 0.5, MAX_SCALE = 3;
@@ -170,19 +176,18 @@
     seller:   { name: 'Блок продажи', price: 0,              color: '#4cc07a', svg: 'Sell_block.svg' }
   };
 
-  // === Состояние ===
   let state = {
-    blocks: {},          // "x,y" -> { type, dir }
+    blocks: {},
     balance: 0,
-    hotbar: [],          // история использованных типов
+    hotbar: [],
     camera: { x: 0, y: 0, scale: 1 }
   };
 
   let selectedType = null;
-  let conveyorDir = 1;              // 0=up,1=right,2=down,3=left
-  let items = [];                   // движущиеся квадраты {x,y (float), dir}
-  let spawnerTimers = {};           // "x,y" -> время последнего спавна
-  let images = {};                  // svg-изображения по имени файла
+  let conveyorDir = 1;
+  let items = [];
+  let spawnerTimers = {};
+  let images = {};
   let lastFrame = performance.now();
 
   const canvas = document.getElementById('game');
@@ -200,7 +205,7 @@
   }
   Object.values(BLOCK_DEFS).forEach(def => { images[def.svg] = loadImage(def.svg); });
 
-  // === Размер canvas ===
+  // === Canvas ===
   function resize() {
     canvas.width = window.innerWidth * devicePixelRatio;
     canvas.height = window.innerHeight * devicePixelRatio;
@@ -212,13 +217,12 @@
   resize();
 
   // === Координаты ===
-  function screenToWorld(sx, sy) {
-    const s = BASE_CELL * state.camera.scale;
-    return { x: (sx - state.camera.x) / s, y: (sy - state.camera.y) / s };
-  }
   function screenToGrid(sx, sy) {
-    const w = screenToWorld(sx, sy);
-    return { x: Math.floor(w.x), y: Math.floor(w.y) };
+    const s = BASE_CELL * state.camera.scale;
+    return {
+      x: Math.floor((sx - state.camera.x) / s),
+      y: Math.floor((sy - state.camera.y) / s)
+    };
   }
 
   // === Отрисовка ===
@@ -227,39 +231,47 @@
     const camX = state.camera.x, camY = state.camera.y;
     const W = window.innerWidth, H = window.innerHeight;
 
-    // фон поля
-    ctx.fillStyle = '#ececef';
+    // фон вне поля
+    ctx.fillStyle = '#0c111b';
     ctx.fillRect(0, 0, W, H);
 
-    // видимая область в клетках
-    const startX = Math.max(0, Math.floor(-camX / s));
-    const startY = Math.max(0, Math.floor(-camY / s));
+    const fieldW = GRID_W * s, fieldH = GRID_H * s;
+    const fieldX = camX, fieldY = camY;
+
+    // поле
+    ctx.fillStyle = '#161f31';
+    ctx.fillRect(fieldX, fieldY, fieldW, fieldH);
+
+    // видимая область сетки
+    const startX = Math.max(0, Math.floor((0 - camX) / s));
+    const startY = Math.max(0, Math.floor((0 - camY) / s));
     const endX = Math.min(GRID_W, Math.ceil((W - camX) / s));
     const endY = Math.min(GRID_H, Math.ceil((H - camY) / s));
 
-    // границы поля (вне поля — темнее)
-    ctx.fillStyle = '#dcdce0';
-    if (camX > 0) ctx.fillRect(0, 0, camX, H);
-    if (camY > 0) ctx.fillRect(0, 0, W, camY);
-    const fieldW = GRID_W * s, fieldH = GRID_H * s;
-    if (camX + fieldW < W) ctx.fillRect(camX + fieldW, 0, W - (camX + fieldW), H);
-    if (camY + fieldH < H) ctx.fillRect(0, camY + fieldH, W, H - (camY + fieldH));
-
-    // линии сетки
-    ctx.strokeStyle = '#d5d5da';
+    ctx.strokeStyle = '#22304a';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = startX; x <= endX; x++) {
       const px = Math.floor(camX + x * s) + 0.5;
       ctx.moveTo(px, Math.max(0, camY));
-      ctx.lineTo(px, Math.min(H, camY + GRID_H * s));
+      ctx.lineTo(px, Math.min(H, camY + fieldH));
     }
     for (let y = startY; y <= endY; y++) {
       const py = Math.floor(camY + y * s) + 0.5;
       ctx.moveTo(Math.max(0, camX), py);
-      ctx.lineTo(Math.min(W, camX + GRID_W * s), py);
+      ctx.lineTo(Math.min(W, camX + fieldW), py);
     }
     ctx.stroke();
+  }
+
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
   }
 
   function drawBlocks() {
@@ -277,16 +289,15 @@
       const pad = Math.max(1, s * 0.06);
       const size = s - pad * 2;
 
-      // подложка
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      const r = Math.min(6, s * 0.12);
-      roundRect(ctx, px + pad, py + pad, size, size, r);
+      // подложка блока
+      ctx.fillStyle = '#1d2941';
+      roundRect(ctx, px + pad, py + pad, size, size, Math.min(6, s * 0.12));
       ctx.fill();
-      ctx.strokeStyle = '#e0e0e5';
+      ctx.strokeStyle = '#2f4160';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      // svg или цветной кружок
+      // svg или кружок
       const img = images[def.svg];
       if (img && img.ready) {
         ctx.drawImage(img, px + pad + size * 0.15, py + pad + size * 0.15, size * 0.7, size * 0.7);
@@ -297,12 +308,12 @@
         ctx.fill();
       }
 
-      // стрелка направления конвейера
+      // стрелка конвейера
       if (block.type === 'conveyor') {
         ctx.save();
         ctx.translate(px + s / 2, py + s / 2);
         ctx.rotate(block.dir * Math.PI / 2);
-        ctx.fillStyle = '#4a7cf7';
+        ctx.fillStyle = '#7dd3fc';
         ctx.beginPath();
         const a = size * 0.28;
         ctx.moveTo(a, 0);
@@ -315,15 +326,6 @@
     }
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
   function drawItems() {
     const s = BASE_CELL * state.camera.scale;
     const camX = state.camera.x, camY = state.camera.y;
@@ -333,7 +335,6 @@
       if (px + s < 0 || py + s < 0 || px > window.innerWidth || py > window.innerHeight) continue;
       const size = s * 0.5;
       ctx.fillStyle = '#f5b400';
-      ctx.beginPath();
       roundRect(ctx, px + s / 2 - size / 2, py + s / 2 - size / 2, size, size, Math.min(4, s * 0.1));
       ctx.fill();
       ctx.strokeStyle = '#c98f00';
@@ -355,7 +356,7 @@
       ctx.save();
       ctx.translate(px + s / 2, py + s / 2);
       ctx.rotate(conveyorDir * Math.PI / 2);
-      ctx.fillStyle = 'rgba(74,124,247,0.5)';
+      ctx.fillStyle = 'rgba(125,211,252,0.6)';
       ctx.beginPath();
       const a = s * 0.25;
       ctx.moveTo(a, 0);
@@ -368,7 +369,7 @@
     ctx.lineWidth = 1;
   }
 
-  // === Игровая логика ===
+  // === Логика ===
   function countType(type) {
     let n = 0;
     for (const k in state.blocks) if (state.blocks[k].type === type) n++;
@@ -376,6 +377,7 @@
   }
 
   function canPlace(type) {
+    if (!type) return false;
     if (type === 'spawner' && countType('spawner') >= 1) return false;
     if (type === 'seller' && countType('seller') >= countType('spawner')) return false;
     return true;
@@ -398,7 +400,6 @@
     };
     if (selectedType === 'spawner') spawnerTimers[key] = performance.now();
 
-    // в историю
     state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
     renderHotbar();
     updateBalance();
@@ -417,7 +418,7 @@
   }
 
   function updateTick(now) {
-    const dt = (now - lastFrame) / 1000;
+    const dt = Math.min(0.1, (now - lastFrame) / 1000);
     lastFrame = now;
 
     // спавн
@@ -428,26 +429,25 @@
       if (now - spawnerTimers[key] >= SPAWN_INTERVAL) {
         spawnerTimers[key] = now;
         const [x, y] = key.split(',').map(Number);
-        // если на клетке уже есть item — пропускаем
-        if (!items.some(it => Math.floor(it.x) === x && Math.floor(it.y) === y)) {
+        if (!items.some(it => Math.round(it.x) === x && Math.round(it.y) === y)) {
           items.push({ x, y, dir: -1 });
         }
       }
     }
 
-    // движение квадратов
+    // движение
     for (let i = items.length - 1; i >= 0; i--) {
       const it = items[i];
       const cx = Math.round(it.x);
       const cy = Math.round(it.y);
 
-      // если стоим на клетке — ищем конвейер под нами
-      if (Math.abs(it.x - cx) < 0.001 && Math.abs(it.y - cy) < 0.001) {
+      const atCell = Math.abs(it.x - cx) < 0.001 && Math.abs(it.y - cy) < 0.001;
+
+      if (atCell) {
         it.x = cx; it.y = cy;
         const key = cx + ',' + cy;
         const block = state.blocks[key];
 
-        // продажа
         if (block && block.type === 'seller') {
           state.balance += SELL_PRICE;
           items.splice(i, 1);
@@ -456,16 +456,13 @@
           continue;
         }
 
-        // конвейер
         if (block && block.type === 'conveyor') {
           it.dir = block.dir;
           const dx = [0, 1, 0, -1][block.dir];
           const dy = [-1, 0, 1, 0][block.dir];
           const nx = cx + dx, ny = cy + dy;
           if (nx < 0 || ny < 0 || nx >= GRID_W || ny >= GRID_H) continue;
-          const nkey = nx + ',' + ny;
-          const nblock = state.blocks[nkey];
-          // вперёд можно если: пусто, конвейер, продажа. Блок спавнера — стоп.
+          const nblock = state.blocks[nx + ',' + ny];
           if (!nblock || nblock.type === 'conveyor' || nblock.type === 'seller') {
             it.x += dx * dt / CONVEYOR_SPEED;
             it.y += dy * dt / CONVEYOR_SPEED;
@@ -473,25 +470,22 @@
           continue;
         }
 
-        // пусто — стоим
         it.dir = -1;
       } else {
-        // в движении — продолжаем
         const dx = [0, 1, 0, -1][it.dir];
         const dy = [-1, 0, 1, 0][it.dir];
         if (dx === 0 && dy === 0) { it.dir = -1; continue; }
         it.x += dx * dt / CONVEYOR_SPEED;
         it.y += dy * dt / CONVEYOR_SPEED;
-        // пришли в целевую клетку?
-        if (Math.abs(it.x - Math.round(it.x)) < 0.01 && Math.abs(it.y - Math.round(it.y)) < 0.01) {
-          it.x = Math.round(it.x);
-          it.y = Math.round(it.y);
+        // фиксируем прибытие к целевой клетке
+        const tcx = Math.round(it.x), tcy = Math.round(it.y);
+        if (Math.abs(it.x - tcx) < 0.02 && Math.abs(it.y - tcy) < 0.02) {
+          it.x = tcx; it.y = tcy;
         }
       }
     }
   }
 
-  // === Цикл ===
   function loop(now) {
     updateTick(now);
     drawGrid();
@@ -509,8 +503,7 @@
   function updateShopState() {
     document.querySelectorAll('.shop-item').forEach(el => {
       const type = el.dataset.type;
-      if (!canPlace(type)) el.classList.add('disabled');
-      else el.classList.remove('disabled');
+      el.classList.toggle('disabled', !canPlace(type));
     });
   }
 
@@ -535,7 +528,7 @@
       label.className = 'label';
       label.textContent = def.name.split(' ')[0];
       div.appendChild(label);
-      div.addEventListener('click', () => selectType(type));
+      div.addEventListener('click', (e) => { e.stopPropagation(); selectType(type); });
       hotbarEl.appendChild(div);
     });
   }
@@ -562,7 +555,6 @@
   });
 
   window.addEventListener('mousemove', e => {
-    // обновляем наведение
     const g = screenToGrid(e.clientX, e.clientY);
     mouseGrid = g;
 
@@ -581,10 +573,14 @@
   window.addEventListener('mouseup', e => {
     if (e.button !== 0) return;
     if (isDown && !isDragging) {
-      // клик — поставить блок
-      const g = screenToGrid(e.clientX, e.clientY);
-      // игнорируем клики по UI
-      if (e.target === canvas) placeBlock(g.x, g.y);
+      // ставим блок только если курсор над canvas
+      const rect = canvas.getBoundingClientRect();
+      const overCanvas = e.clientX >= rect.left && e.clientX <= rect.right &&
+                        e.clientY >= rect.top && e.clientY <= rect.bottom;
+      if (overCanvas && e.target === canvas) {
+        const g = screenToGrid(e.clientX, e.clientY);
+        placeBlock(g.x, g.y);
+      }
     }
     isDown = false;
     isDragging = false;
@@ -592,14 +588,12 @@
     canvas.classList.remove('dragging');
   });
 
-  // ПКМ — удалить блок
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
     const g = screenToGrid(e.clientX, e.clientY);
     removeBlock(g.x, g.y);
   });
 
-  // Колесо — зум
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     const oldScale = state.camera.scale;
@@ -608,7 +602,6 @@
     newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
     if (newScale === oldScale) return;
 
-    // зум относительно курсора
     const wx = (e.clientX - state.camera.x) / (BASE_CELL * oldScale);
     const wy = (e.clientY - state.camera.y) / (BASE_CELL * oldScale);
     state.camera.scale = newScale;
@@ -616,7 +609,6 @@
     state.camera.y = e.clientY - wy * BASE_CELL * newScale;
   }, { passive: false });
 
-  // Вращение конвейера
   window.addEventListener('keydown', e => {
     if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
       conveyorDir = (conveyorDir + 1) % 4;
@@ -648,26 +640,26 @@
   function load() {
     try {
       const raw = localStorage.getItem('factory_save');
-      if (!raw) return;
+      if (!raw) return false;
       const data = JSON.parse(raw);
       state.blocks = data.blocks || {};
       state.balance = data.balance || 0;
       state.hotbar = data.hotbar || [];
       if (data.camera) state.camera = data.camera;
-      // таймеры спавнеров — с текущего момента
       for (const key in state.blocks) {
         if (state.blocks[key].type === 'spawner') spawnerTimers[key] = performance.now();
       }
-    } catch (e) { console.warn('Load error', e); }
+      return true;
+    } catch (e) { console.warn('Load error', e); return false; }
   }
 
   // === Старт ===
   function init() {
-    load();
-    // центрируем камеру
-    if (!localStorage.getItem('factory_save')) {
+    const loaded = load();
+    if (!loaded) {
       state.camera.x = window.innerWidth / 2 - (GRID_W * BASE_CELL) / 2;
       state.camera.y = window.innerHeight / 2 - (GRID_H * BASE_CELL) / 2;
+      state.camera.scale = 1;
     }
     updateBalance();
     updateShopState();

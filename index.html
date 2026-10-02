@@ -213,56 +213,18 @@
 <script>
 (() => {
   // ============================================================
-  // ВСТРОЕННЫЕ SVG (base64 data-URI). Исправлен xmlns.
+  // Пути к SVG-файлам (лежат рядом с index.html на GitHub)
   // ============================================================
+  const SRC_SPAWNER  = 'Square_Fabrick.svg';
+  const SRC_CONVEYOR = 'Conveer1.svg';
+  const SRC_SELLER   = 'Sell_block.svg';
 
-  // Square.svg — маленький синий квадрат (не используется напрямую,
-  // оставлен на случай, если захочешь где-то показать)
-  const SVG_SQUARE = 'data:image/svg+xml;base64,' + btoa(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">' +
-    '<rect x="5" y="5" width="90" height="90" rx="20" fill="#2980B9"/>' +
-    '</svg>'
-  );
-
-  // Square_Fabrick.svg — спавнер (серый фон + оранжевый круг + стрелка)
-  const SVG_SPAWNER = 'data:image/svg+xml;base64,' + btoa(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">' +
-    '<rect width="500" height="500" fill="#808080"/>' +
-    '<circle cx="250" cy="250" r="225" fill="#FF7D1B"/>' +
-    '<path d="M250 120 L350 240 H290 V380 H210 V240 H150 Z" fill="#FEAE34" stroke-linejoin="round"/>' +
-    '</svg>'
-  );
-
-  // Conveer1.svg — конвейер (синий квадрат + 3 шеврона)
-  const SVG_CONVEYOR = 'data:image/svg+xml;base64,' + btoa(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">' +
-    '<rect x="25" y="25" width="450" height="450" rx="90" fill="#2980B9"/>' +
-    '<g fill="none" stroke="#1B4F72" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">' +
-    '<path d="M 80,170 L 250,90 L 420,170"/>' +
-    '<path d="M 80,270 L 250,190 L 420,270"/>' +
-    '<path d="M 80,370 L 250,290 L 420,370"/>' +
-    '</g>' +
-    '</svg>'
-  );
-
-  // Sell_block.svg — блок продажи (зелёный квадрат + $)
-  const SVG_SELLER = 'data:image/svg+xml;base64,' + btoa(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500">' +
-    '<rect x="25" y="25" width="450" height="450" rx="90" fill="#2ECC71"/>' +
-    '<g fill="#FFFFFF">' +
-    '<rect x="235" y="80" width="30" height="340" rx="10"/>' +
-    '<path d="M 330,175 C 330,120 170,120 170,175 C 170,235 330,235 330,305 C 330,365 170,365 170,310 L 170,295 A 20,20 0 0,1 190,275 L 200,275 A 20,20 0 0,1 220,295 C 220,325 280,325 280,305 C 280,265 120,265 120,185 C 120,120 280,120 280,165 L 280,180 A 20,20 0 0,1 260,200 L 250,200 A 20,20 0 0,1 230,180 C 230,145 170,145 170,175 C 170,195 210,205 250,215 C 300,225 330,245 330,275 A 20,20 0 0,1 330,275 Z"/>' +
-    '</g>' +
-    '</svg>'
-  );
-
-  // Прописываем иконки в магазин
-  document.getElementById('iconSpawner').src = SVG_SPAWNER;
-  document.getElementById('iconConveyor').src = SVG_CONVEYOR;
-  document.getElementById('iconSeller').src = SVG_SELLER;
+  document.getElementById('iconSpawner').src  = SRC_SPAWNER;
+  document.getElementById('iconConveyor').src = SRC_CONVEYOR;
+  document.getElementById('iconSeller').src   = SRC_SELLER;
 
   // ============================================================
-  // Константы игры
+  // Константы
   // ============================================================
   const GRID_W = 100, GRID_H = 100;
   const BASE_CELL = 32;
@@ -272,14 +234,18 @@
   const CONVEYOR_PRICE = 0.05;
   const MIN_SCALE = 0.5, MAX_SCALE = 3;
 
+  // Система: 0=вверх, 1=вправо, 2=вниз, 3=влево
   const DX = [0, 1, 0, -1];
   const DY = [-1, 0, 1, 0];
-  const ANGLE = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
+  // Угол поворота SVG для каждого направления.
+  // Стрелка на SVG нарисована ВВЕРХ, значит при dir=0 поворот = 0.
+  // Далее по часовой: 90°, 180°, -90° (=270°).
+  const ANGLE = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
 
   const BLOCK_DEFS = {
-    spawner:  { name: 'Спавнер',      price: 0,              src: SVG_SPAWNER },
-    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, src: SVG_CONVEYOR },
-    seller:   { name: 'Блок продажи', price: 0,              src: SVG_SELLER }
+    spawner:  { name: 'Спавнер',      price: 0,              src: SRC_SPAWNER },
+    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, src: SRC_CONVEYOR },
+    seller:   { name: 'Блок продажи', price: 0,              src: SRC_SELLER }
   };
 
   let state = {
@@ -291,8 +257,8 @@
 
   let admin = { infiniteMoney: false, infiniteBlocks: false, speed: 1 };
   let selectedType = null;
-  let conveyorDir = 1;
-  let spawnerDir = 1;
+  let conveyorDir = 0;   // по умолчанию вверх
+  let spawnerDir = 0;    // по умолчанию вверх
   let items = [];
   let spawnerTimers = {};
   let images = {};
@@ -306,7 +272,7 @@
   const balanceEl = document.getElementById('balance');
   const hotbarEl = document.getElementById('hotbar');
 
-  // Предзагрузка картинок из data-URI (работает всегда — не нужен сервер)
+  // Предзагрузка картинок
   Object.values(BLOCK_DEFS).forEach(def => {
     const img = new Image();
     img.onload = () => { img.ready = true; };
@@ -375,6 +341,7 @@
     c.closePath();
   }
 
+  // Стрелка-индикатор направления, смещённая к "носу" клетки
   function drawArrowRaw(px, py, s, angle, color) {
     ctx.save();
     ctx.translate(px + s / 2, py + s / 2);
@@ -419,7 +386,6 @@
       const pad = Math.max(1, s * 0.06);
       const size = s - pad * 2;
 
-      // фон-подложка
       ctx.fillStyle = '#1d2941';
       roundRect(ctx, px + pad, py + pad, size, size, Math.min(6, s * 0.12));
       ctx.fill();
@@ -444,13 +410,14 @@
         ctx.fillRect(px + pad + size * 0.2, py + pad + size * 0.2, size * 0.6, size * 0.6);
       }
 
+      // Дополнительный полупрозрачный индикатор направления
       if (block.type === 'conveyor') {
         const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
-        drawArrowRaw(px, py, s, angle, 'rgba(125,211,252,0.9)');
+        drawArrowRaw(px, py, s, angle, 'rgba(125,211,252,0.85)');
       }
       if (block.type === 'spawner') {
         const angle = rotAnims[key] ? rotAnims[key].display : ANGLE[block.dir];
-        drawArrowRaw(px, py, s, angle, 'rgba(245,180,0,0.95)');
+        drawArrowRaw(px, py, s, angle, 'rgba(245,180,0,0.9)');
       }
     }
   }

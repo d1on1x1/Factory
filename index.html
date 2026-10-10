@@ -1,830 +1,1233 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Factory</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0c111b;
-    color: #e6ebf5;
-    user-select: none;
-  }
-  #game { display: block; width: 100vw; height: 100vh; cursor: crosshair; position: fixed; inset: 0; }
-
-  .panel {
-    position: absolute;
-    background: #161f31;
-    border: 1px solid #22304a;
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    padding: 10px 14px;
-    color: #e6ebf5;
-  }
-  #balance {
-    top: 12px; left: 12px;
-    font-size: 18px; font-weight: 600;
-    min-width: 90px; text-align: center; color: #7dd3fc;
-  }
-  #resetBtn {
-    top: 12px; right: 12px; cursor: pointer; font-size: 14px;
-    border: 1px solid #22304a; background: #161f31;
-    padding: 10px 16px; border-radius: 6px;
-    color: #e6ebf5; transition: background .15s; font-family: inherit;
-  }
-  #resetBtn:hover { background: #1d2941; }
-  #adminToggle {
-    top: 12px; right: 110px; cursor: pointer; font-size: 13px;
-    border: 1px solid #22304a; background: #161f31;
-    padding: 10px 12px; border-radius: 6px;
-    color: #7dd3fc; font-family: inherit;
-  }
-  #adminToggle:hover { background: #1d2941; }
-
-  #shop { top: 70px; left: 12px; width: 220px; padding: 12px; }
-  #shop h3 {
-    font-size: 15px; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 6px; color: #e6ebf5;
-  }
-  .shop-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border: 1px solid #22304a;
-    border-radius: 6px; margin-bottom: 8px;
-    cursor: pointer; transition: all .15s; background: #121a2a;
-  }
-  .shop-item:last-child { margin-bottom: 0; }
-  .shop-item:hover { background: #1a2438; border-color: #2f4160; }
-  .shop-item.selected {
-    background: #1a2c50; border-color: #4a7cf7;
-    box-shadow: 0 0 0 1px #4a7cf7 inset;
-  }
-  .shop-item.disabled { opacity: 0.35; cursor: not-allowed; }
-  .shop-item .icon {
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .shop-item .icon img { width: 32px; height: 32px; }
-  .shop-item .info { flex: 1; min-width: 0; }
-  .shop-item .name { font-size: 13px; font-weight: 600; color: #e6ebf5; }
-  .shop-item .meta { font-size: 11px; color: #8a96ab; margin-top: 2px; }
-
-  #hotbar {
-    position: absolute; bottom: 16px; left: 50%;
-    transform: translateX(-50%);
-    background: #161f31; border: 1px solid #22304a;
-    border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    padding: 8px 10px; display: none; gap: 8px; align-items: center;
-  }
-  #hotbar.visible { display: flex; }
-  .hotbar-item {
-    position: relative;
-    width: 56px; height: 56px; border-radius: 6px;
-    border: 1px solid #22304a; background: #121a2a;
-    cursor: pointer; display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    transition: all .15s; padding: 4px; color: #e6ebf5;
-  }
-  .hotbar-item img { width: 28px; height: 28px; }
-  .hotbar-item .label { font-size: 9px; color: #8a96ab; margin-top: 2px; }
-  .hotbar-item .num {
-    position: absolute; top: 2px; left: 4px;
-    font-size: 9px; color: #5c7099; font-weight: 700;
-  }
-  .hotbar-item:hover { background: #1a2438; }
-  .hotbar-item.selected { background: #1a2c50; border-color: #4a7cf7; }
-
-  #adminPanel {
-    position: absolute; top: 70px; right: 12px; width: 230px;
-    background: #161f31; border: 1px solid #4a7cf7;
-    border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-    color: #e6ebf5; z-index: 1000; display: none;
-  }
-  #adminPanel.visible { display: block; }
-  #adminHeader {
-    padding: 8px 12px; background: #1a2c50;
-    border-bottom: 1px solid #22304a;
-    border-radius: 6px 6px 0 0; font-size: 13px; font-weight: 600;
-    cursor: move; display: flex; justify-content: space-between;
-    align-items: center; color: #7dd3fc;
-  }
-  #adminHeader .close { cursor: pointer; color: #8a96ab; font-size: 16px; line-height: 1; padding: 0 4px; }
-  #adminHeader .close:hover { color: #ff6b6b; }
-  #adminBody { padding: 10px 12px; }
-  .admin-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 0; font-size: 13px; gap: 8px;
-  }
-  .switch {
-    position: relative; width: 38px; height: 20px;
-    background: #22304a; border-radius: 10px;
-    cursor: pointer; transition: background .2s; flex-shrink: 0;
-  }
-  .switch::after {
-    content: ''; position: absolute; top: 2px; left: 2px;
-    width: 16px; height: 16px; background: #8a96ab;
-    border-radius: 50%; transition: all .2s;
-  }
-  .switch.on { background: #4a7cf7; }
-  .switch.on::after { left: 20px; background: #fff; }
-
-  .speed-row { display: flex; gap: 4px; padding-top: 6px; flex-wrap: wrap; }
-  .speed-btn {
-    flex: 1; min-width: 36px; padding: 6px 0;
-    border: 1px solid #22304a; background: #121a2a;
-    color: #e6ebf5; border-radius: 4px; cursor: pointer;
-    font-size: 12px; font-family: inherit; transition: all .15s;
-  }
-  .speed-btn:hover { background: #1a2438; }
-  .speed-btn.active { background: #4a7cf7; border-color: #4a7cf7; color: #fff; }
-
-  .admin-reset-btn {
-    margin-top: 10px; width: 100%; padding: 8px 0;
-    background: #2a1a1a; border: 1px solid #5a2a2a;
-    color: #ff8888; border-radius: 4px; cursor: pointer;
-    font-size: 13px; font-family: inherit; transition: all .15s;
-  }
-  .admin-reset-btn:hover { background: #3a1f1f; border-color: #7a3535; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shapefactory Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            touch-action: none;
+            display: block;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,0.8); }
+    </style>
 </head>
-<body>
-<canvas id="game"></canvas>
-<div id="balance" class="panel">$0.00</div>
-<button id="resetBtn" class="panel">↻ Сброс</button>
-<button id="adminToggle" class="panel">⚙ Админ</button>
+<body class="bg-slate-900 text-slate-100 h-screen w-screen relative font-sans overflow-hidden transition-colors duration-300 dark" id="appBody">
 
-<div id="shop" class="panel">
-  <h3>🛒 Магазин</h3>
-  <div class="shop-item" data-type="spawner">
-    <div class="icon"><img id="iconSpawner" alt=""></div>
-    <div class="info">
-      <div class="name">Спавнер</div>
-      <div class="meta">бесплатно · лимит: 1</div>
+    <header id="topBar" class="absolute top-0 left-0 right-0 z-20 bg-slate-800/90 backdrop-blur border-b border-slate-700/80 px-4 py-2 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-6">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shapes text-indigo-400 text-2xl animate-pulse"></i>
+                <span class="font-bold text-xl tracking-wide bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Shapefactory</span>
+            </div>
+
+            <!-- Stats display -->
+            <div class="flex items-center space-x-4 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-700/60 text-sm">
+                <div class="flex items-center space-x-1.5" title="Cash">
+                    <i class="fa-solid fa-coins text-amber-400"></i>
+                    <span id="cashDisplay" class="font-mono font-semibold text-amber-300">$100</span>
+                </div>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <div class="flex items-center space-x-1.5" title="Factory Level">
+                    <i class="fa-solid fa-layer-group text-indigo-400"></i>
+                    <span class="text-slate-400">Lvl</span>
+                    <span id="levelDisplay" class="font-mono font-bold text-indigo-300">1</span>
+                </div>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <div class="flex items-center space-x-1.5" title="Items Delivered">
+                    <i class="fa-solid fa-truck-ramp-box text-emerald-400"></i>
+                    <span id="deliveredDisplay" class="font-mono text-emerald-300">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Level XP Progress -->
+        <div class="hidden md:flex flex-col w-48 space-y-1">
+            <div class="flex justify-between text-xs text-slate-400">
+                <span>XP Progress</span>
+                <span id="xpText">0 / 50</span>
+            </div>
+            <div class="w-full bg-slate-700/50 rounded-full h-2 overflow-hidden border border-slate-600/40">
+                <div id="xpBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <!-- Top Right Actions -->
+        <div class="flex items-center space-x-2">
+            <button id="btnStats" class="p-2 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-300 transition" title="Statistics & Achievements">
+                <i class="fa-solid fa-chart-pie"></i>
+            </button>
+            <button id="btnSettings" class="p-2 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-300 transition" title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button id="btnSaveLoad" class="p-2 rounded-lg bg-slate-700/60 hover:bg-slate-700 text-slate-300 transition" title="Saves">
+                <i class="fa-solid fa-floppy-disk"></i>
+            </button>
+        </div>
+    </header>
+
+    <aside class="absolute left-3 top-16 bottom-20 z-20 flex flex-col space-y-3 pointer-events-none">
+        <!-- Tools Section -->
+        <div class="bg-slate-800/90 backdrop-blur p-2 rounded-xl border border-slate-700/80 shadow-xl flex flex-col space-y-2 pointer-events-auto">
+            <div class="text-[10px] uppercase font-bold text-slate-400 text-center tracking-wider mb-1">Tools</div>
+            <button data-tool="select" class="tool-btn active p-2.5 rounded-lg hover:bg-slate-700 text-slate-300 transition flex items-center justify-center relative group" title="Select / Inspect (1)">
+                <i class="fa-solid fa-arrow-pointer text-lg"></i>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded shadow hidden group-hover:block whitespace-nowrap z-30">Select (1)</span>
+            </button>
+            <button data-tool="pencil" class="tool-btn p-2.5 rounded-lg hover:bg-slate-700 text-slate-300 transition flex items-center justify-center relative group" title="Pencil / Place (2)">
+                <i class="fa-solid fa-pencil text-lg"></i>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded shadow hidden group-hover:block whitespace-nowrap z-30">Pencil (2)</span>
+            </button>
+            <button data-tool="move" class="tool-btn p-2.5 rounded-lg hover:bg-slate-700 text-slate-300 transition flex items-center justify-center relative group" title="Move Structure (3)">
+                <i class="fa-solid fa-arrows-up-down-left-right text-lg"></i>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded shadow hidden group-hover:block whitespace-nowrap z-30">Move (3)</span>
+            </button>
+            <button data-tool="hammer" class="tool-btn p-2.5 rounded-lg hover:bg-slate-700 text-slate-300 transition flex items-center justify-center relative group" title="Demolish / Hammer (4 - Shift+Click Instant)">
+                <i class="fa-solid fa-hammer text-lg"></i>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded shadow hidden group-hover:block whitespace-nowrap z-30">Hammer (4) [Shift+Click Instant]</span>
+            </button>
+            <button data-tool="schematic" class="tool-btn p-2.5 rounded-lg hover:bg-slate-700 text-slate-300 transition flex items-center justify-center relative group" title="Schematic Area Selection (5)">
+                <i class="fa-solid fa-object-group text-lg"></i>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-xs rounded shadow hidden group-hover:block whitespace-nowrap z-30">Schematic Select (5)</span>
+            </button>
+        </div>
+
+        <!-- Structure Palette Section -->
+        <div class="bg-slate-800/90 backdrop-blur p-2 rounded-xl border border-slate-700/80 shadow-xl flex flex-col space-y-2 pointer-events-auto overflow-y-auto max-h-[calc(100vh-280px)]">
+            <div class="text-[10px] uppercase font-bold text-slate-400 text-center tracking-wider mb-1">Build</div>
+            
+            <button data-build="conveyor" class="build-btn p-2 rounded-lg hover:bg-slate-700 text-slate-300 transition flex flex-col items-center group relative">
+                <i class="fa-solid fa-arrows-to-dot text-indigo-400 text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Conveyor</span>
+                <span class="text-[9px] text-amber-400">$5</span>
+            </button>
+
+            <button data-build="cutter" class="build-btn p-2 rounded-lg hover:bg-slate-700 text-slate-300 transition flex flex-col items-center group relative">
+                <i class="fa-solid fa-scissors text-purple-400 text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Cutter</span>
+                <span class="text-[9px] text-amber-400">$20</span>
+            </button>
+
+            <button data-build="painter" class="build-btn p-2 rounded-lg hover:bg-slate-700 text-slate-300 transition flex flex-col items-center group relative">
+                <i class="fa-solid fa-paintbrush text-pink-400 text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Painter</span>
+                <span class="text-[9px] text-amber-400">$30</span>
+            </button>
+
+            <button data-build="rotator" class="build-btn p-2 rounded-lg hover:bg-slate-700 text-slate-300 transition flex flex-col items-center group relative">
+                <i class="fa-solid fa-rotate-right text-cyan-400 text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Rotator</span>
+                <span class="text-[9px] text-amber-400">$15</span>
+            </button>
+
+            <button data-build="dropper" class="build-btn p-2 rounded-lg hover:bg-slate-700 text-slate-300 transition flex flex-col items-center group relative">
+                <i class="fa-solid fa-box-open text-emerald-400 text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Dropper</span>
+                <span class="text-[9px] text-amber-400">$25</span>
+            </button>
+
+            <button data-build="seller" class="build-btn p-2 rounded-lg hover:bg-slate-700 text-slate-300 transition flex flex-col items-center group relative">
+                <i class="fa-solid fa-cart-shopping text-amber-400 text-lg"></i>
+                <span class="text-[10px] mt-1 font-medium">Seller Hub</span>
+                <span class="text-[9px] text-amber-400">$50</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="w-full h-full relative cursor-crosshair overflow-hidden">
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+    </main>
+
+    <footer id="bottomBar" class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center space-y-2 pointer-events-none">
+        <!-- Control Actions Floating Bar -->
+        <div class="bg-slate-800/90 backdrop-blur px-3 py-1.5 rounded-full border border-slate-700/80 shadow-lg flex items-center space-x-3 pointer-events-auto text-xs">
+            <button id="btnRotate" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-700 hover:bg-slate-600 transition text-slate-200">
+                <i class="fa-solid fa-rotate text-indigo-400"></i>
+                <span>Rotate (R)</span>
+            </button>
+            <div class="h-3 w-px bg-slate-700"></div>
+            <button id="btnCopy" class="flex items-center space-x-1 px-2 py-1 hover:text-indigo-300 transition" title="Copy (C)">
+                <i class="fa-regular fa-copy"></i>
+                <span>Copy</span>
+            </button>
+            <button id="btnCut" class="flex items-center space-x-1 px-2 py-1 hover:text-indigo-300 transition" title="Cut (X)">
+                <i class="fa-solid fa-scissors"></i>
+                <span>Cut</span>
+            </button>
+            <button id="btnPaste" class="flex items-center space-x-1 px-2 py-1 hover:text-indigo-300 transition" title="Paste (V)">
+                <i class="fa-regular fa-paste"></i>
+                <span>Paste</span>
+            </button>
+            <div class="h-3 w-px bg-slate-700"></div>
+            <button id="btnHotbarMode" class="flex items-center space-x-1 px-2 py-1 bg-indigo-600/30 text-indigo-300 rounded hover:bg-indigo-600/50 transition">
+                <i class="fa-solid fa-sliders"></i>
+                <span id="hotbarModeText">Mode: Assigned Slots</span>
+            </button>
+        </div>
+
+        <!-- Hotbar Slots 1-8 -->
+        <div id="hotbar" class="bg-slate-800/95 backdrop-blur p-1.5 rounded-xl border border-slate-700/80 shadow-2xl flex items-center space-x-1.5 pointer-events-auto">
+            <!-- Dynamically Rendered Hotbar Slots -->
+        </div>
+    </footer>
+
+    <!-- Demolish Confirmation Modal -->
+    <div id="modalDemolish" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-sm w-full shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-100">Confirm Demolition</h3>
+            <p class="text-sm text-slate-400" id="demolishModalText">Are you sure you want to demolish this structure?</p>
+            <div class="flex items-center justify-center space-x-3 pt-2">
+                <button id="btnCancelDemolish" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium transition">Cancel</button>
+                <button id="btnConfirmDemolish" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition shadow-lg shadow-red-600/30">Demolish</button>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="shop-item" data-type="conveyor">
-    <div class="icon"><img id="iconConveyor" alt=""></div>
-    <div class="info">
-      <div class="name">Конвейер</div>
-      <div class="meta">0.05 $ · без лимита</div>
+
+    <!-- Settings Modal -->
+    <div id="modalSettings" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-5">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-gear text-indigo-400"></i>
+                    <span>Settings</span>
+                </h3>
+                <button id="btnCloseSettings" class="text-slate-400 hover:text-slate-200 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4 text-sm">
+                <!-- Visual Theme Toggle -->
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-300 font-medium">Interface Theme</span>
+                    <button id="btnToggleTheme" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-indigo-300 text-xs font-semibold flex items-center space-x-2">
+                        <i id="themeIcon" class="fa-solid fa-moon"></i>
+                        <span id="themeText">Dark Mode</span>
+                    </button>
+                </div>
+
+                <!-- Sound FX Slider -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Sound Effects Volume</span>
+                        <span id="sfxVal">80%</span>
+                    </div>
+                    <input type="range" id="sliderSFX" min="0" max="100" value="80" class="w-full accent-indigo-500 cursor-pointer">
+                </div>
+
+                <!-- Music / Ambient Volume Slider -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Audio Feedback Synth</span>
+                        <span id="musicVal">60%</span>
+                    </div>
+                    <input type="range" id="sliderMusic" min="0" max="100" value="60" class="w-full accent-indigo-500 cursor-pointer">
+                </div>
+            </div>
+
+            <div class="pt-2 text-right">
+                <button id="btnSaveSettings" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition">Done</button>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="shop-item" data-type="seller">
-    <div class="icon"><img id="iconSeller" alt=""></div>
-    <div class="info">
-      <div class="name">Блок продажи</div>
-      <div class="meta">бесплатно · лимит: 1</div>
+
+    <!-- Saves / Load Manager Modal -->
+    <div id="modalSaves" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-floppy-disk text-indigo-400"></i>
+                    <span>Save / Load Game</span>
+                </h3>
+                <button id="btnCloseSaves" class="text-slate-400 hover:text-slate-200 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-3">
+                <div class="flex space-x-2">
+                    <button id="btnQuickSave" class="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Manual Save</span>
+                    </button>
+                    <button id="btnQuickLoad" class="flex-1 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold transition flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>Load Latest</span>
+                    </button>
+                </div>
+                <div class="text-xs text-slate-400 bg-slate-900/60 p-3 rounded-lg border border-slate-700/50">
+                    <p><i class="fa-solid fa-clock-rotate-left text-indigo-400 mr-1"></i> Auto-save occurs every 5 minutes automatically into browser storage.</p>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div id="hotbar"></div>
+    <!-- Stats & Achievements Modal -->
+    <div id="modalStats" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-line text-indigo-400"></i>
+                    <span>Stats & Achievements</span>
+                </h3>
+                <button id="btnCloseStats" class="text-slate-400 hover:text-slate-200 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
 
-<div id="adminPanel">
-  <div id="adminHeader">
-    <span>⚙ Админ-панель</span>
-    <span class="close" id="adminClose">×</span>
-  </div>
-  <div id="adminBody">
-    <div class="admin-row">
-      <span>Бесконечные деньги</span>
-      <div class="switch" id="swMoney"></div>
+            <!-- Factory Stats Grid -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50 text-center">
+                    <div class="text-xs text-slate-400">Total Money Earned</div>
+                    <div id="statTotalMoney" class="text-lg font-bold text-amber-400 font-mono">$0</div>
+                </div>
+                <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-700/50 text-center">
+                    <div class="text-xs text-slate-400">Items Processed</div>
+                    <div id="statTotalDelivered" class="text-lg font-bold text-emerald-400 font-mono">0</div>
+                </div>
+            </div>
+
+            <!-- Achievements List -->
+            <div class="space-y-2 pt-2">
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Achievements</div>
+                
+                <div id="achieveList" class="space-y-2">
+                    <!-- Achievements loaded dynamically -->
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="admin-row">
-      <span>Безлимитные блоки</span>
-      <div class="switch" id="swLimits"></div>
-    </div>
-    <div class="admin-row" style="display:block;">
-      <div style="margin-bottom:6px;">Скорость игры</div>
-      <div class="speed-row" id="speedRow">
-        <button class="speed-btn active" data-speed="1">1x</button>
-        <button class="speed-btn" data-speed="2">2x</button>
-        <button class="speed-btn" data-speed="3">3x</button>
-        <button class="speed-btn" data-speed="5">5x</button>
-        <button class="speed-btn" data-speed="10">10x</button>
-      </div>
-    </div>
-    <button class="admin-reset-btn" id="adminReset">↻ Сбросить прогресс</button>
-  </div>
-</div>
 
-<script>
-(() => {
-  const SRC_SPAWNER  = 'Square_Fabrick.svg';
-  const SRC_CONVEYOR = 'Conveer1.svg';
-  const SRC_SELLER   = 'Sell_block.svg';
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-  document.getElementById('iconSpawner').src  = SRC_SPAWNER;
-  document.getElementById('iconConveyor').src = SRC_CONVEYOR;
-  document.getElementById('iconSeller').src   = SRC_SELLER;
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.sfxVol = 0.8;
+                this.musicVol = 0.6;
+            }
 
-  const GRID_W = 100, GRID_H = 100;
-  const BASE_CELL = 32;
-  const SPAWN_INTERVAL = 1000;
-  const CONVEYOR_SPEED = 0.5;
-  const SELL_PRICE = 0.01;
-  const CONVEYOR_PRICE = 0.05;
-  const MIN_SCALE = 0.5, MAX_SCALE = 3;
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
 
-  // Система: 0=вверх, 1=вправо, 2=вниз, 3=влево
-  const DX = [0, 1, 0, -1];
-  const DY = [-1, 0, 1, 0];
+            playTone(freq, duration = 0.1, type = 'sine', gainVal = 0.1) {
+                if (!this.ctx || this.sfxVol <= 0) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal * this.sfxVol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
 
-  // Два разных угла:
-  // ANGLE_SVG — поворот SVG-иконки (стрелка на ней нарисована вверх).
-  //             dir=0 (вверх) => 0°, дальше по часовой.
-  // ANGLE_IND — поворот индикатора (drawArrowRaw рисует стрелку вправо).
-  //             dir=0 (вверх) => -90°, чтобы развернуть "вправо" в "вверх".
-  const ANGLE_SVG = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
-  const ANGLE_IND = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
-
-  const BLOCK_DEFS = {
-    spawner:  { name: 'Спавнер',      price: 0,              src: SRC_SPAWNER },
-    conveyor: { name: 'Конвейер',     price: CONVEYOR_PRICE, src: SRC_CONVEYOR },
-    seller:   { name: 'Блок продажи', price: 0,              src: SRC_SELLER }
-  };
-
-  let state = {
-    blocks: {},
-    balance: 0,
-    hotbar: [],
-    camera: { x: 0, y: 0, scale: 1 }
-  };
-
-  let admin = { infiniteMoney: false, infiniteBlocks: false, speed: 1 };
-  let selectedType = null;
-  let conveyorDir = 0;
-  let spawnerDir = 0;
-  let items = [];
-  let spawnerTimers = {};
-  let images = {};
-  let lastFrame = performance.now();
-  // rotAnims хранит УГОЛ SVG для каждого блока
-  let rotAnims = {};
-  let popups = [];
-  let dissolving = [];
-
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const balanceEl = document.getElementById('balance');
-  const hotbarEl = document.getElementById('hotbar');
-
-  Object.values(BLOCK_DEFS).forEach(def => {
-    const img = new Image();
-    img.onload = () => { img.ready = true; };
-    img.onerror = () => { img.ready = false; };
-    img.src = def.src;
-    images[def.src] = img;
-  });
-
-  function resize() {
-    canvas.width = window.innerWidth * devicePixelRatio;
-    canvas.height = window.innerHeight * devicePixelRatio;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  function screenToGrid(sx, sy) {
-    const s = BASE_CELL * state.camera.scale;
-    return {
-      x: Math.floor((sx - state.camera.x) / s),
-      y: Math.floor((sy - state.camera.y) / s)
-    };
-  }
-
-  function drawGrid() {
-    const s = BASE_CELL * state.camera.scale;
-    const camX = state.camera.x, camY = state.camera.y;
-    const W = window.innerWidth, H = window.innerHeight;
-
-    ctx.fillStyle = '#0c111b';
-    ctx.fillRect(0, 0, W, H);
-    const fieldW = GRID_W * s, fieldH = GRID_H * s;
-    ctx.fillStyle = '#161f31';
-    ctx.fillRect(camX, camY, fieldW, fieldH);
-
-    const startX = Math.max(0, Math.floor((0 - camX) / s));
-    const startY = Math.max(0, Math.floor((0 - camY) / s));
-    const endX = Math.min(GRID_W, Math.ceil((W - camX) / s));
-    const endY = Math.min(GRID_H, Math.ceil((H - camY) / s));
-
-    ctx.strokeStyle = '#22304a';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let x = startX; x <= endX; x++) {
-      const px = Math.floor(camX + x * s) + 0.5;
-      ctx.moveTo(px, Math.max(0, camY));
-      ctx.lineTo(px, Math.min(H, camY + fieldH));
-    }
-    for (let y = startY; y <= endY; y++) {
-      const py = Math.floor(camY + y * s) + 0.5;
-      ctx.moveTo(Math.max(0, camX), py);
-      ctx.lineTo(Math.min(W, camX + fieldW), py);
-    }
-    ctx.stroke();
-  }
-
-  function roundRect(c, x, y, w, h, r) {
-    c.beginPath();
-    c.moveTo(x + r, y);
-    c.arcTo(x + w, y, x + w, y + h, r);
-    c.arcTo(x + w, y + h, x, y + h, r);
-    c.arcTo(x, y + h, x, y, r);
-    c.arcTo(x, y, x + w, y, r);
-    c.closePath();
-  }
-
-  // Индикаторная стрелка (рисуется вправо в локальных координатах)
-  function drawArrowRaw(px, py, s, angle, color) {
-    ctx.save();
-    ctx.translate(px + s / 2, py + s / 2);
-    ctx.rotate(angle);
-    const offset = s * 0.28;
-    ctx.translate(offset, 0);
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    const a = s * 0.13;
-    ctx.moveTo(a, 0);
-    ctx.lineTo(-a * 0.6, -a * 0.75);
-    ctx.lineTo(-a * 0.6, a * 0.75);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function updateRotAnims(dt) {
-    for (const key in rotAnims) {
-      const a = rotAnims[key];
-      let diff = a.target - a.display;
-      while (diff > Math.PI) diff -= Math.PI * 2;
-      while (diff < -Math.PI) diff += Math.PI * 2;
-      if (Math.abs(diff) < 0.001) { a.display = a.target; continue; }
-      const speed = 12;
-      a.display += Math.sign(diff) * Math.min(Math.abs(diff), speed * dt);
-    }
-  }
-
-  function drawBlocks() {
-    const s = BASE_CELL * state.camera.scale;
-    const camX = state.camera.x, camY = state.camera.y;
-
-    for (const key in state.blocks) {
-      const [x, y] = key.split(',').map(Number);
-      const px = camX + x * s;
-      const py = camY + y * s;
-      if (px + s < 0 || py + s < 0 || px > window.innerWidth || py > window.innerHeight) continue;
-
-      const block = state.blocks[key];
-      const def = BLOCK_DEFS[block.type];
-      const pad = Math.max(1, s * 0.06);
-      const size = s - pad * 2;
-
-      ctx.fillStyle = '#1d2941';
-      roundRect(ctx, px + pad, py + pad, size, size, Math.min(6, s * 0.12));
-      ctx.fill();
-      ctx.strokeStyle = '#2f4160';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      const img = images[def.src];
-      if (img && img.ready) {
-        if (block.type === 'conveyor' || block.type === 'spawner') {
-          const angle = rotAnims[key] ? rotAnims[key].display : ANGLE_SVG[block.dir];
-          ctx.save();
-          ctx.translate(px + s / 2, py + s / 2);
-          ctx.rotate(angle);
-          ctx.drawImage(img, -size * 0.38, -size * 0.38, size * 0.76, size * 0.76);
-          ctx.restore();
-        } else {
-          ctx.drawImage(img, px + pad + size * 0.12, py + pad + size * 0.12, size * 0.76, size * 0.76);
+            playPlace() { this.playTone(440, 0.08, 'triangle', 0.15); }
+            playRemove() { this.playTone(220, 0.12, 'sawtooth', 0.1); }
+            playCopy() { this.playTone(660, 0.06, 'sine', 0.12); }
+            playPaste() { this.playTone(880, 0.09, 'sine', 0.15); }
+            playSell() {
+                this.playTone(523.25, 0.05, 'sine', 0.15);
+                setTimeout(() => this.playTone(659.25, 0.08, 'sine', 0.15), 50);
+            }
+            playLevelUp() {
+                const notes = [440, 554.37, 659.25, 880];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playTone(freq, 0.15, 'triangle', 0.2), idx * 80);
+                });
+            }
         }
-      } else {
-        ctx.fillStyle = '#4a7cf7';
-        ctx.fillRect(px + pad + size * 0.2, py + pad + size * 0.2, size * 0.6, size * 0.6);
-      }
 
-      // Индикаторная стрелка — рисуем в правильном направлении,
-      // беря угол от фактического направления блока (dir), а не от rotAnims.
-      if (block.type === 'conveyor') {
-        drawArrowRaw(px, py, s, ANGLE_IND[block.dir], 'rgba(125,211,252,0.85)');
-      }
-      if (block.type === 'spawner') {
-        drawArrowRaw(px, py, s, ANGLE_IND[block.dir], 'rgba(245,180,0,0.9)');
-      }
-    }
-  }
+        const sound = new SoundEngine();
 
-  function drawItems(dt) {
-    const s = BASE_CELL * state.camera.scale;
-    const camX = state.camera.x, camY = state.camera.y;
+        const TILE_SIZE = 48;
+        const GRID_SIZE = 80; // 80x80 Grid Map
 
-    for (const it of items) {
-      const px = camX + it.x * s;
-      const py = camY + it.y * s;
-      if (px + s < 0 || py + s < 0 || px > window.innerWidth || py > window.innerHeight) continue;
-      const size = s * 0.5;
-      ctx.fillStyle = '#f5b400';
-      roundRect(ctx, px + s / 2 - size / 2, py + s / 2 - size / 2, size, size, Math.min(4, s * 0.1));
-      ctx.fill();
-      ctx.strokeStyle = '#c98f00';
-      ctx.stroke();
-    }
+        const BUILDINGS = {
+            conveyor: { name: 'Conveyor', cost: 5, icon: 'fa-arrows-to-dot', color: '#818cf8' },
+            cutter: { name: 'Cutter', cost: 20, icon: 'fa-scissors', color: '#c084fc' },
+            painter: { name: 'Painter', cost: 30, icon: 'fa-paintbrush', color: '#f472b6' },
+            rotator: { name: 'Rotator', cost: 15, icon: 'fa-rotate-right', color: '#38bdf8' },
+            dropper: { name: 'Dropper', cost: 25, icon: 'fa-box-open', color: '#34d399' },
+            seller: { name: 'Seller Hub', cost: 50, icon: 'fa-cart-shopping', color: '#fbbf24' }
+        };
 
-    for (let i = dissolving.length - 1; i >= 0; i--) {
-      const d = dissolving[i];
-      d.age += dt;
-      const t = d.age / d.life;
-      if (t >= 1) { dissolving.splice(i, 1); continue; }
-      const px = camX + d.x * s;
-      const py = camY + d.y * s;
-      const baseSize = s * 0.5;
-      const size = baseSize * (1 - t * 0.3);
-      const alpha = 1 - t;
-      const lift = -t * s * 0.4;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#f5b400';
-      roundRect(ctx, px + s / 2 - size / 2, py + s / 2 - size / 2 + lift, size, size, Math.min(4, s * 0.1));
-      ctx.fill();
-      ctx.strokeStyle = '#c98f00';
-      ctx.stroke();
-      ctx.globalAlpha = alpha * 0.8;
-      ctx.strokeStyle = '#ffe27a';
-      ctx.lineWidth = 2;
-      roundRect(ctx, px + s / 2 - size / 2 - t * 6, py + s / 2 - size / 2 + lift - t * 6, size + t * 12, size + t * 12, Math.min(6, s * 0.15));
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
+        const ACHIEVEMENTS = [
+            { id: 'first_sell', name: 'First Sale', desc: 'Deliver your first item to the Seller Hub.', done: false },
+            { id: 'wealthy_100', name: 'Starting Tycoon', desc: 'Reach $200 in cash.', done: false },
+            { id: 'level_5', name: 'Industrialist', desc: 'Reach Factory Level 5.', done: false },
+            { id: 'master_builder', name: 'Master Builder', desc: 'Place over 20 structures.', done: false }
+        ];
 
-  function drawPopups(dt) {
-    const s = BASE_CELL * state.camera.scale;
-    const camX = state.camera.x, camY = state.camera.y;
-    for (let i = popups.length - 1; i >= 0; i--) {
-      const p = popups[i];
-      p.age += dt;
-      const t = p.age / p.life;
-      if (t >= 1) { popups.splice(i, 1); continue; }
-      const px = camX + p.x * s + s / 2;
-      const py = camY + p.y * s + s / 2 - t * s * 1.4;
-      const alpha = 1 - t;
-      const scale = 1 + (1 - t) * 0.15;
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(px, py);
-      ctx.scale(scale, scale);
-      ctx.font = 'bold ' + Math.max(9, s * 0.28) + 'px -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-      ctx.strokeText(p.text, 0, 0);
-      ctx.fillStyle = '#7dffa0';
-      ctx.fillText(p.text, 0, 0);
-      ctx.restore();
-    }
-  }
+        let state = {
+            cash: 100,
+            level: 1,
+            xp: 0,
+            deliveredCount: 0,
+            totalEarned: 0,
+            structuresPlaced: 0,
+            activeTool: 'select', // select, pencil, move, hammer, schematic
+            selectedBuild: 'conveyor',
+            rotation: 0, // 0: East, 1: South, 2: West, 3: North
+            hotbarMode: 'assigned', // 'assigned' or 'recent'
+            recentItems: ['conveyor', 'dropper', 'seller', 'cutter', 'painter', 'rotator'],
+            hotbarSlots: ['conveyor', 'cutter', 'painter', 'rotator', 'dropper', 'seller', null, null],
+            selectedSlot: 0,
+            clipboard: null, // Stores single tile or schematic object
+            movingStructure: null, // For move tool logic
+            schematicStart: null,
+            schematicEnd: null,
+            particles: [],
+            grid: Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null)),
+            items: [], // Active items moving on conveyors
+            viewport: { x: (GRID_SIZE * TILE_SIZE) / 2 - window.innerWidth / 2, y: (GRID_SIZE * TILE_SIZE) / 2 - window.innerHeight / 2, zoom: 1 }
+        };
 
-  function drawPreview() {
-    if (!selectedType) return;
-    const { x, y } = mouseGrid;
-    if (x < 0 || y < 0 || x >= GRID_W || y >= GRID_H) return;
-    const s = BASE_CELL * state.camera.scale;
-    const px = state.camera.x + x * s;
-    const py = state.camera.y + y * s;
-    ctx.strokeStyle = '#4a7cf7';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(px + 1, py + 1, s - 2, s - 2);
-    if (selectedType === 'conveyor') drawArrowRaw(px, py, s, ANGLE_IND[conveyorDir], 'rgba(125,211,252,0.7)');
-    if (selectedType === 'spawner') drawArrowRaw(px, py, s, ANGLE_IND[spawnerDir], 'rgba(245,180,0,0.8)');
-    ctx.lineWidth = 1;
-  }
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-  function countType(type) {
-    let n = 0;
-    for (const k in state.blocks) if (state.blocks[k].type === type) n++;
-    return n;
-  }
-
-  function canPlace(type) {
-    if (!type) return false;
-    if (admin.infiniteBlocks) return true;
-    if (type === 'spawner' && countType('spawner') >= 1) return false;
-    if (type === 'seller' && countType('seller') >= countType('spawner')) return false;
-    return true;
-  }
-
-  function placeBlock(gx, gy) {
-    if (!selectedType) return;
-    if (gx < 0 || gy < 0 || gx >= GRID_W || gy >= GRID_H) return;
-    const key = gx + ',' + gy;
-    if (state.blocks[key]) return;
-    if (!canPlace(selectedType)) return;
-    const def = BLOCK_DEFS[selectedType];
-    if (!admin.infiniteMoney && state.balance < def.price) return;
-    if (!admin.infiniteMoney) state.balance -= def.price;
-    const dir = selectedType === 'conveyor' ? conveyorDir
-              : selectedType === 'spawner'  ? spawnerDir
-              : 0;
-    state.blocks[key] = { type: selectedType, dir };
-    if (selectedType === 'spawner') spawnerTimers[key] = performance.now();
-    rotAnims[key] = { display: ANGLE_SVG[dir], target: ANGLE_SVG[dir] };
-    state.hotbar = [selectedType, ...state.hotbar.filter(t => t !== selectedType)].slice(0, 8);
-    renderHotbar();
-    updateBalance();
-    updateShopState();
-    save();
-  }
-
-  function removeBlock(gx, gy) {
-    const key = gx + ',' + gy;
-    if (!state.blocks[key]) return;
-    const type = state.blocks[key].type;
-    delete state.blocks[key];
-    delete rotAnims[key];
-    if (type === 'spawner') delete spawnerTimers[key];
-    updateShopState();
-    save();
-  }
-
-  function updateTick(now) {
-    const realDt = Math.min(0.1, (now - lastFrame) / 1000);
-    lastFrame = now;
-    const dt = realDt * admin.speed;
-    const scaledNow = now * admin.speed;
-    updateRotAnims(realDt);
-
-    for (const key in state.blocks) {
-      const b = state.blocks[key];
-      if (b.type !== 'spawner') continue;
-      if (!spawnerTimers[key]) spawnerTimers[key] = scaledNow;
-      if (scaledNow - spawnerTimers[key] >= SPAWN_INTERVAL) {
-        spawnerTimers[key] = scaledNow;
-        const [x, y] = key.split(',').map(Number);
-        const dx = DX[b.dir], dy = DY[b.dir];
-        const tx = x + dx, ty = y + dy;
-        if (tx < 0 || ty < 0 || tx >= GRID_W || ty >= GRID_H) continue;
-        if (!items.some(it => Math.round(it.x) === tx && Math.round(it.y) === ty)) {
-          items.push({ x: tx, y: ty, dir: -1 });
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-      }
-    }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-    for (let i = items.length - 1; i >= 0; i--) {
-      const it = items[i];
-      const cx = Math.round(it.x);
-      const cy = Math.round(it.y);
-      const atCell = Math.abs(it.x - cx) < 0.001 && Math.abs(it.y - cy) < 0.001;
-      if (atCell) {
-        it.x = cx; it.y = cy;
-        const key = cx + ',' + cy;
-        const block = state.blocks[key];
-        if (block && block.type === 'seller') {
-          if (!admin.infiniteMoney) state.balance += SELL_PRICE;
-          dissolving.push({ x: cx, y: cy, age: 0, life: 0.6 });
-          popups.push({ x: cx, y: cy, age: 0, life: 1.1, text: '+$' + SELL_PRICE.toFixed(2) });
-          items.splice(i, 1);
-          updateBalance();
-          save();
-          continue;
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-2 rounded-lg shadow-lg text-xs font-semibold transition-all transform translate-y-2 opacity-0 flex items-center space-x-2 border text-white ${
+                type === 'error' ? 'bg-red-900/90 border-red-700' :
+                type === 'success' ? 'bg-emerald-900/90 border-emerald-700' : 'bg-slate-800/90 border-slate-700'
+            }`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-xmark text-red-400' : type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-info text-indigo-400'}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
         }
-        if (block && block.type === 'conveyor') {
-          it.dir = block.dir;
-          const dx = DX[block.dir], dy = DY[block.dir];
-          const nx = cx + dx, ny = cy + dy;
-          if (nx < 0 || ny < 0 || nx >= GRID_W || ny >= GRID_H) continue;
-          const nblock = state.blocks[nx + ',' + ny];
-          if (!nblock || nblock.type === 'conveyor' || nblock.type === 'seller') {
-            it.x += dx * dt / CONVEYOR_SPEED;
-            it.y += dy * dt / CONVEYOR_SPEED;
-          }
-          continue;
+
+        class FactoryItem {
+            constructor(x, y, shape = 'square', color = '#60a5fa') {
+                this.x = x;
+                this.y = y;
+                this.shape = shape; // square, circle, triangle, half-circle
+                this.color = color;
+                this.speed = 0.04;
+                this.stuckTimer = 0;
+            }
         }
-        it.dir = -1;
-      } else {
-        const dx = DX[it.dir], dy = DY[it.dir];
-        if (dx === 0 && dy === 0) { it.dir = -1; continue; }
-        it.x += dx * dt / CONVEYOR_SPEED;
-        it.y += dy * dt / CONVEYOR_SPEED;
-        const tcx = Math.round(it.x), tcy = Math.round(it.y);
-        if (Math.abs(it.x - tcx) < 0.02 && Math.abs(it.y - tcy) < 0.02) {
-          it.x = tcx; it.y = tcy;
+
+        const DIR_VECTORS = [
+            { x: 1, y: 0 },  // 0: East
+            { x: 0, y: 1 },  // 1: South
+            { x: -1, y: 0 }, // 2: West
+            { x: 0, y: -1 }  // 3: North
+        ];
+
+        function isOutOfBounds(gx, gy) {
+            return gx < 0 || gy < 0 || gx >= GRID_SIZE || gy >= GRID_SIZE;
         }
-      }
-    }
-  }
 
-  function loop(now) {
-    const dtReal = Math.min(0.1, (now - lastFrame) / 1000) || 0.016;
-    updateTick(now);
-    drawGrid();
-    drawBlocks();
-    drawItems(dtReal);
-    drawPopups(dtReal);
-    drawPreview();
-    requestAnimationFrame(loop);
-  }
+        function placeStructure(gx, gy, type, rot, isFree = false) {
+            if (isOutOfBounds(gx, gy)) return false;
+            const bld = BUILDINGS[type];
+            if (!bld) return false;
 
-  function updateBalance() {
-    if (admin.infiniteMoney) { balanceEl.textContent = '∞ $'; return; }
-    balanceEl.textContent = '$' + state.balance.toFixed(2);
-  }
+            if (!isFree && state.cash < bld.cost) {
+                showToast('Not enough cash!', 'error');
+                return false;
+            }
 
-  function updateShopState() {
-    document.querySelectorAll('.shop-item').forEach(el => {
-      el.classList.toggle('disabled', !canPlace(el.dataset.type));
-    });
-  }
+            if (state.grid[gx][gy] !== null) {
+                showToast('Tile already occupied!', 'error');
+                return false;
+            }
 
-  function renderHotbar() {
-    if (state.hotbar.length === 0) { hotbarEl.classList.remove('visible'); return; }
-    hotbarEl.classList.add('visible');
-    hotbarEl.innerHTML = '';
-    state.hotbar.forEach((type, idx) => {
-      const def = BLOCK_DEFS[type];
-      const div = document.createElement('div');
-      div.className = 'hotbar-item';
-      if (selectedType === type) div.classList.add('selected');
-      div.title = def.name + ' (клавиша ' + (idx + 1) + ')';
-      const num = document.createElement('div');
-      num.className = 'num'; num.textContent = (idx + 1);
-      div.appendChild(num);
-      const img = document.createElement('img');
-      img.src = def.src;
-      div.appendChild(img);
-      const label = document.createElement('div');
-      label.className = 'label';
-      label.textContent = def.name.split(' ')[0];
-      div.appendChild(label);
-      div.addEventListener('click', (e) => { e.stopPropagation(); selectType(type); });
-      hotbarEl.appendChild(div);
-    });
-  }
+            if (!isFree) {
+                state.cash -= bld.cost;
+                state.structuresPlaced++;
+            }
 
-  function selectType(type) {
-    if (!canPlace(type)) return;
-    selectedType = type;
-    document.querySelectorAll('.shop-item').forEach(el => {
-      el.classList.toggle('selected', el.dataset.type === type);
-    });
-    renderHotbar();
-  }
+            state.grid[gx][gy] = {
+                type: type,
+                rotation: rot,
+                timer: 0
+            };
 
-  let isDown = false, isDragging = false, dragStart = null;
-  let mouseGrid = { x: -1, y: -1 };
+            // Update Recents
+            if (!state.recentItems.includes(type)) {
+                state.recentItems.unshift(type);
+                if (state.recentItems.length > 8) state.recentItems.pop();
+            }
 
-  canvas.addEventListener('mousedown', e => {
-    if (e.button === 0) {
-      isDown = true; isDragging = false;
-      dragStart = { x: e.clientX, y: e.clientY, camX: state.camera.x, camY: state.camera.y };
-    }
-  });
-  window.addEventListener('mousemove', e => {
-    mouseGrid = screenToGrid(e.clientX, e.clientY);
-    if (isDown && dragStart) {
-      const dx = e.clientX - dragStart.x;
-      const dy = e.clientY - dragStart.y;
-      if (Math.hypot(dx, dy) > 5) {
-        isDragging = true;
-        canvas.classList.add('dragging');
-        state.camera.x = dragStart.camX + dx;
-        state.camera.y = dragStart.camY + dy;
-      }
-    }
-  });
-  window.addEventListener('mouseup', e => {
-    if (e.button !== 0) return;
-    if (isDown && !isDragging && e.target === canvas) {
-      const g = screenToGrid(e.clientX, e.clientY);
-      placeBlock(g.x, g.y);
-    }
-    isDown = false; isDragging = false; dragStart = null;
-    canvas.classList.remove('dragging');
-  });
-  canvas.addEventListener('contextmenu', e => {
-    e.preventDefault();
-    const g = screenToGrid(e.clientX, e.clientY);
-    removeBlock(g.x, g.y);
-  });
-  canvas.addEventListener('wheel', e => {
-    e.preventDefault();
-    const oldScale = state.camera.scale;
-    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
-    let newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, oldScale * factor));
-    if (newScale === oldScale) return;
-    const wx = (e.clientX - state.camera.x) / (BASE_CELL * oldScale);
-    const wy = (e.clientY - state.camera.y) / (BASE_CELL * oldScale);
-    state.camera.scale = newScale;
-    state.camera.x = e.clientX - wx * BASE_CELL * newScale;
-    state.camera.y = e.clientY - wy * BASE_CELL * newScale;
-  }, { passive: false });
+            sound.playPlace();
+            updateUI();
+            checkAchievements();
+            return true;
+        }
 
-  window.addEventListener('keydown', e => {
-    if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
-      if (selectedType === 'spawner') spawnerDir = (spawnerDir + 3) % 4;
-      else conveyorDir = (conveyorDir + 3) % 4;
-      return;
-    }
-    const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= 8 && state.hotbar[n - 1]) selectType(state.hotbar[n - 1]);
-  });
+        function removeStructure(gx, gy, confirmModal = false) {
+            if (isOutOfBounds(gx, gy)) return false;
+            const cell = state.grid[gx][gy];
+            if (!cell) return false;
 
-  document.querySelectorAll('.shop-item').forEach(el => {
-    el.addEventListener('click', () => selectType(el.dataset.type));
-  });
+            if (confirmModal) {
+                const modal = document.getElementById('modalDemolish');
+                modal.classList.remove('hidden');
+                document.getElementById('demolishModalText').innerText = `Demolish ${BUILDINGS[cell.type].name} at (${gx}, ${gy})?`;
+                
+                const btnConfirm = document.getElementById('btnConfirmDemolish');
+                const btnCancel = document.getElementById('btnCancelDemolish');
 
-  function resetGame() {
-    if (!confirm('Сбросить весь прогресс?')) return;
-    localStorage.removeItem('factory_save');
-    location.reload();
-  }
-  document.getElementById('resetBtn').addEventListener('click', resetGame);
-  document.getElementById('adminReset').addEventListener('click', resetGame);
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    btnConfirm.onclick = null;
+                    btnCancel.onclick = null;
+                };
 
-  const adminPanel = document.getElementById('adminPanel');
-  const adminHeader = document.getElementById('adminHeader');
-  document.getElementById('adminToggle').addEventListener('click', () => adminPanel.classList.toggle('visible'));
-  document.getElementById('adminClose').addEventListener('click', () => adminPanel.classList.remove('visible'));
+                btnConfirm.onclick = () => {
+                    state.grid[gx][gy] = null;
+                    sound.playRemove();
+                    cleanup();
+                    updateUI();
+                };
+                btnCancel.onclick = cleanup;
+                return true;
+            } else {
+                state.grid[gx][gy] = null;
+                sound.playRemove();
+                updateUI();
+                return true;
+            }
+        }
 
-  let adminDrag = null;
-  adminHeader.addEventListener('mousedown', e => {
-    if (e.target.classList.contains('close')) return;
-    adminDrag = { offsetX: e.clientX - adminPanel.offsetLeft, offsetY: e.clientY - adminPanel.offsetTop };
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', e => {
-    if (adminDrag) {
-      adminPanel.style.left = (e.clientX - adminDrag.offsetX) + 'px';
-      adminPanel.style.top = (e.clientY - adminDrag.offsetY) + 'px';
-      adminPanel.style.right = 'auto';
-    }
-  });
-  window.addEventListener('mouseup', () => { adminDrag = null; });
+        function spawnParticles(x, y, color) {
+            for (let i = 0; i < 8; i++) {
+                state.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 3,
+                    vy: (Math.random() - 0.5) * 3,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
 
-  const swMoney = document.getElementById('swMoney');
-  const swLimits = document.getElementById('swLimits');
-  swMoney.addEventListener('click', () => {
-    admin.infiniteMoney = !admin.infiniteMoney;
-    swMoney.classList.toggle('on', admin.infiniteMoney);
-    updateBalance(); updateShopState();
-  });
-  swLimits.addEventListener('click', () => {
-    admin.infiniteBlocks = !admin.infiniteBlocks;
-    swLimits.classList.toggle('on', admin.infiniteBlocks);
-    updateShopState();
-  });
-  document.querySelectorAll('.speed-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      admin.speed = parseFloat(btn.dataset.speed);
-      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const now = performance.now() * admin.speed;
-      for (const key in spawnerTimers) spawnerTimers[key] = now;
-    });
-  });
+        let lastTime = performance.now();
+        function update(dt) {
+            // 1. Process Droppers & Machines
+            for (let x = 0; x < GRID_SIZE; x++) {
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    const struct = state.grid[x][y];
+                    if (!struct) continue;
 
-  function save() {
-    localStorage.setItem('factory_save', JSON.stringify({
-      blocks: state.blocks, balance: state.balance,
-      hotbar: state.hotbar, camera: state.camera
-    }));
-  }
-  function load() {
-    try {
-      const raw = localStorage.getItem('factory_save');
-      if (!raw) return false;
-      const data = JSON.parse(raw);
-      state.blocks = data.blocks || {};
-      state.balance = data.balance || 0;
-      state.hotbar = data.hotbar || [];
-      if (data.camera) state.camera = data.camera;
-      for (const key in state.blocks) {
-        const b = state.blocks[key];
-        rotAnims[key] = { display: ANGLE_SVG[b.dir] || 0, target: ANGLE_SVG[b.dir] || 0 };
-        if (b.type === 'spawner') spawnerTimers[key] = performance.now();
-      }
-      return true;
-    } catch (e) { console.warn('Load error', e); return false; }
-  }
+                    struct.timer += dt;
 
-  function init() {
-    const loaded = load();
-    if (!loaded) {
-      state.camera.x = window.innerWidth / 2 - (GRID_W * BASE_CELL) / 2;
-      state.camera.y = window.innerHeight / 2 - (GRID_H * BASE_CELL) / 2;
-      state.camera.scale = 1;
-    }
-    updateBalance(); updateShopState(); renderHotbar();
-    lastFrame = performance.now();
-    requestAnimationFrame(loop);
-  }
-  init();
-})();
-</script>
+                    // Dropper spawns shapes
+                    if (struct.type === 'dropper' && struct.timer >= 2.0) {
+                        struct.timer = 0;
+                        const targetX = x + DIR_VECTORS[struct.rotation].x;
+                        const targetY = y + DIR_VECTORS[struct.rotation].y;
+
+                        // Spawn if cell target is within bounds
+                        if (!isOutOfBounds(targetX, targetY)) {
+                            const hasItemNear = state.items.some(it => Math.hypot(it.x - (targetX + 0.5), it.y - (targetY + 0.5)) < 0.4);
+                            if (!hasItemNear) {
+                                state.items.push(new FactoryItem(x + 0.5, y + 0.5));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Process Items Movement along Conveyors/Machines
+            for (let i = state.items.length - 1; i >= 0; i--) {
+                const item = state.items[i];
+                const gx = Math.floor(item.x);
+                const gy = Math.floor(item.y);
+
+                if (isOutOfBounds(gx, gy)) {
+                    state.items.splice(i, 1);
+                    continue;
+                }
+
+                const struct = state.grid[gx][gy];
+
+                if (struct) {
+                    const dir = DIR_VECTORS[struct.rotation];
+                    const targetX = gx + 0.5 + dir.x * 0.5;
+                    const targetY = gy + 0.5 + dir.y * 0.5;
+
+                    // Move item toward tile target output
+                    const moveStep = item.speed;
+                    item.x += dir.x * moveStep;
+                    item.y += dir.y * moveStep;
+
+                    // Processing Machines Logic
+                    if (struct.type === 'rotator' && Math.hypot(item.x - (gx + 0.5), item.y - (gy + 0.5)) < 0.1) {
+                        item.shape = (item.shape === 'square') ? 'triangle' : 'square';
+                    } else if (struct.type === 'painter' && Math.hypot(item.x - (gx + 0.5), item.y - (gy + 0.5)) < 0.1) {
+                        item.color = '#f43f5e'; // Paint pinkish red
+                    } else if (struct.type === 'cutter' && Math.hypot(item.x - (gx + 0.5), item.y - (gy + 0.5)) < 0.1) {
+                        item.shape = 'half-circle';
+                    } else if (struct.type === 'seller' && Math.hypot(item.x - (gx + 0.5), item.y - (gy + 0.5)) < 0.25) {
+                        // Seller Hub Cash Reward logic
+                        const reward = item.color === '#f43f5e' ? 25 : 10;
+                        state.cash += reward;
+                        state.totalEarned += reward;
+                        state.deliveredCount++;
+                        state.xp += 10;
+
+                        spawnParticles((gx + 0.5) * TILE_SIZE, (gy + 0.5) * TILE_SIZE, item.color);
+                        sound.playSell();
+
+                        // Level Up check
+                        const neededXP = state.level * 50;
+                        if (state.xp >= neededXP) {
+                            state.xp -= neededXP;
+                            state.level++;
+                            sound.playLevelUp();
+                            showToast(`Level Up! Reached Level ${state.level}!`, 'success');
+                        }
+
+                        state.items.splice(i, 1);
+                        updateUI();
+                        checkAchievements();
+                        continue;
+                    }
+                } else {
+                    // Item stuck on empty tile
+                    item.stuckTimer += dt;
+                    if (item.stuckTimer > 3.0) {
+                        state.items.splice(i, 1); // Clean up abandoned items
+                    }
+                }
+            }
+
+            // 3. Particles Update
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const p = state.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= dt * 2;
+                if (p.life <= 0) state.particles.splice(i, 1);
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            // Apply Viewport Translation and Zoom
+            ctx.translate(-state.viewport.x, -state.viewport.y);
+            ctx.scale(state.viewport.zoom, state.viewport.zoom);
+
+            // Render Grid Lines
+            ctx.strokeStyle = document.body.classList.contains('dark') ? 'rgba(51, 65, 85, 0.4)' : 'rgba(203, 213, 225, 0.6)';
+            ctx.lineWidth = 1;
+
+            const startX = Math.max(0, Math.floor(state.viewport.x / TILE_SIZE));
+            const startY = Math.max(0, Math.floor(state.viewport.y / TILE_SIZE));
+            const endX = Math.min(GRID_SIZE, Math.ceil((state.viewport.x + canvas.width) / TILE_SIZE));
+            const endY = Math.min(GRID_SIZE, Math.ceil((state.viewport.y + canvas.height) / TILE_SIZE));
+
+            for (let x = startX; x <= endX; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * TILE_SIZE, startY * TILE_SIZE);
+                ctx.lineTo(x * TILE_SIZE, endY * TILE_SIZE);
+                ctx.stroke();
+            }
+
+            for (let y = startY; y <= endY; y++) {
+                ctx.beginPath();
+                ctx.moveTo(startX * TILE_SIZE, y * TILE_SIZE);
+                ctx.lineTo(endX * TILE_SIZE, y * TILE_SIZE);
+                ctx.stroke();
+            }
+
+            // Render Structures
+            for (let x = startX; x < endX; x++) {
+                for (let y = startY; y < endY; y++) {
+                    const struct = state.grid[x][y];
+                    if (!struct) continue;
+
+                    const px = x * TILE_SIZE;
+                    const py = y * TILE_SIZE;
+                    const bld = BUILDINGS[struct.type];
+
+                    ctx.save();
+                    ctx.translate(px + TILE_SIZE / 2, py + TILE_SIZE / 2);
+                    ctx.rotate((struct.rotation * 90 * Math.PI) / 180);
+
+                    // Building Base Box
+                    ctx.fillStyle = bld ? bld.color : '#94a3b8';
+                    ctx.beginPath();
+                    ctx.roundRect(-TILE_SIZE / 2 + 2, -TILE_SIZE / 2 + 2, TILE_SIZE - 4, TILE_SIZE - 4, 8);
+                    ctx.fill();
+
+                    // Direction Arrow Indicator
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(12, 0);
+                    ctx.lineTo(-6, -8);
+                    ctx.lineTo(-6, 8);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+            }
+
+            // Render Items
+            for (const item of state.items) {
+                const ix = item.x * TILE_SIZE;
+                const iy = item.y * TILE_SIZE;
+
+                ctx.fillStyle = item.color;
+                ctx.beginPath();
+                if (item.shape === 'square') {
+                    ctx.rect(ix - 8, iy - 8, 16, 16);
+                } else if (item.shape === 'circle') {
+                    ctx.arc(ix, iy, 9, 0, Math.PI * 2);
+                } else if (item.shape === 'triangle') {
+                    ctx.moveTo(ix, iy - 9);
+                    ctx.lineTo(ix - 8, iy + 7);
+                    ctx.lineTo(ix + 8, iy + 7);
+                    ctx.closePath();
+                } else if (item.shape === 'half-circle') {
+                    ctx.arc(ix, iy, 8, 0, Math.PI);
+                }
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            // Render Particles
+            for (const p of state.particles) {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4 * p.life, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+
+            // Render Tool Placement Hover Preview / Ghosts
+            if (hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                const gx = hoverGridPos.x;
+                const gy = hoverGridPos.y;
+                const px = gx * TILE_SIZE;
+                const py = gy * TILE_SIZE;
+
+                if (state.activeTool === 'pencil' || state.activeTool === 'select') {
+                    const bldType = getSelectedBuildType();
+                    const canPlace = state.grid[gx][gy] === null && state.cash >= BUILDINGS[bldType].cost;
+
+                    ctx.save();
+                    ctx.translate(px + TILE_SIZE / 2, py + TILE_SIZE / 2);
+                    ctx.rotate((state.rotation * 90 * Math.PI) / 180);
+
+                    ctx.fillStyle = canPlace ? 'rgba(74, 222, 128, 0.4)' : 'rgba(248, 113, 113, 0.4)';
+                    ctx.strokeStyle = canPlace ? '#22c55e' : '#ef4444';
+                    ctx.lineWidth = 2;
+
+                    ctx.beginPath();
+                    ctx.roundRect(-TILE_SIZE / 2, -TILE_SIZE / 2, TILE_SIZE, TILE_SIZE, 6);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.restore();
+                } else if (state.activeTool === 'hammer') {
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+                    ctx.strokeStyle = '#dc2626';
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                    ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+                } else if (state.activeTool === 'schematic' && state.schematicStart) {
+                    const sx = Math.min(state.schematicStart.x, hoverGridPos.x);
+                    const sy = Math.min(state.schematicStart.y, hoverGridPos.y);
+                    const ex = Math.max(state.schematicStart.x, hoverGridPos.x);
+                    const ey = Math.max(state.schematicStart.y, hoverGridPos.y);
+
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
+                    ctx.strokeStyle = '#6366f1';
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(sx * TILE_SIZE, sy * TILE_SIZE, (ex - sx + 1) * TILE_SIZE, (ey - sy + 1) * TILE_SIZE);
+                    ctx.strokeRect(sx * TILE_SIZE, sy * TILE_SIZE, (ex - sx + 1) * TILE_SIZE, (ey - sy + 1) * TILE_SIZE);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let hoverGridPos = null;
+
+        function getSelectedBuildType() {
+            if (state.hotbarMode === 'assigned') {
+                return state.hotbarSlots[state.selectedSlot] || 'conveyor';
+            } else {
+                return state.recentItems[state.selectedSlot] || 'conveyor';
+            }
+        }
+
+        function getGridPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
+
+            const worldX = (clientX + state.viewport.x) / state.viewport.zoom;
+            const worldY = (clientY + state.viewport.y) / state.viewport.zoom;
+
+            return {
+                x: Math.floor(worldX / TILE_SIZE),
+                y: Math.floor(worldY / TILE_SIZE)
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            sound.init();
+            if (e.button === 1 || e.button === 2) { // Middle or Right click drag
+                isDragging = true;
+                dragStart = { x: e.clientX, y: e.clientY };
+                return;
+            }
+
+            const gPos = getGridPos(e);
+            if (isOutOfBounds(gPos.x, gPos.y)) return;
+
+            if (state.activeTool === 'pencil') {
+                placeStructure(gPos.x, gPos.y, getSelectedBuildType(), state.rotation);
+            } else if (state.activeTool === 'hammer') {
+                removeStructure(gPos.x, gPos.y, !e.shiftKey);
+            } else if (state.activeTool === 'move') {
+                if (!state.movingStructure) {
+                    if (state.grid[gPos.x][gPos.y]) {
+                        state.movingStructure = { ...state.grid[gPos.x][gPos.y] };
+                        state.grid[gPos.x][gPos.y] = null;
+                        showToast('Structure picked up. Click to place elsewhere.', 'info');
+                    }
+                } else {
+                    if (placeStructure(gPos.x, gPos.y, state.movingStructure.type, state.movingStructure.rotation, true)) {
+                        state.movingStructure = null;
+                    }
+                }
+            } else if (state.activeTool === 'schematic') {
+                if (!state.schematicStart) {
+                    state.schematicStart = gPos;
+                } else {
+                    state.schematicEnd = gPos;
+                    // Copy schematic selection to clipboard
+                    const sx = Math.min(state.schematicStart.x, state.schematicEnd.x);
+                    const sy = Math.min(state.schematicStart.y, state.schematicEnd.y);
+                    const ex = Math.max(state.schematicStart.x, state.schematicEnd.x);
+                    const ey = Math.max(state.schematicStart.y, state.schematicEnd.y);
+
+                    const schematicData = [];
+                    for (let x = sx; x <= ex; x++) {
+                        for (let y = sy; y <= ey; y++) {
+                            if (state.grid[x][y]) {
+                                schematicData.push({
+                                    relX: x - sx,
+                                    relY: y - sy,
+                                    ...state.grid[x][y]
+                                });
+                            }
+                        }
+                    }
+
+                    state.clipboard = { type: 'schematic', data: schematicData };
+                    sound.playCopy();
+                    showToast(`Schematic copied (${schematicData.length} elements)! Press 'V' to paste.`, 'success');
+                    state.schematicStart = null;
+                    state.schematicEnd = null;
+                }
+            } else if (state.activeTool === 'select') {
+                const cell = state.grid[gPos.x][gPos.y];
+                if (cell) {
+                    showToast(`Tile: ${BUILDINGS[cell.type].name} (Rotation: ${cell.rotation * 90}°)`, 'info');
+                }
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+                state.viewport.x -= dx;
+                state.viewport.y -= dy;
+                dragStart = { x: e.clientX, y: e.clientY };
+            }
+            hoverGridPos = getGridPos(e);
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        // Mouse Wheel Zoom & Hotbar Scroll
+        canvas.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+                state.viewport.zoom = Math.min(Math.max(0.5, state.viewport.zoom * zoomFactor), 2.0);
+            } else {
+                // Scroll hotbar slots
+                if (e.deltaY > 0) {
+                    state.selectedSlot = (state.selectedSlot + 1) % 8;
+                } else {
+                    state.selectedSlot = (state.selectedSlot - 1 + 8) % 8;
+                }
+                renderHotbar();
+            }
+        });
+
+        // Keyboard Binds (1-8, R, C, V, X)
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            if (e.key >= '1' && e.key <= '8') {
+                state.selectedSlot = parseInt(e.key) - 1;
+                renderHotbar();
+            } else if (e.key.toLowerCase() === 'r') {
+                state.rotation = (state.rotation + 1) % 4;
+                showToast(`Rotated (${state.rotation * 90}°)`, 'info');
+            } else if (e.key.toLowerCase() === 'c') { // Copy
+                if (hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                    const cell = state.grid[hoverGridPos.x][hoverGridPos.y];
+                    if (cell) {
+                        state.clipboard = { type: 'single', data: { ...cell } };
+                        sound.playCopy();
+                        showToast(`Copied ${BUILDINGS[cell.type].name}`, 'info');
+                    }
+                }
+            } else if (e.key.toLowerCase() === 'x') { // Cut
+                if (hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                    const cell = state.grid[hoverGridPos.x][hoverGridPos.y];
+                    if (cell) {
+                        state.clipboard = { type: 'single', data: { ...cell } };
+                        state.grid[hoverGridPos.x][hoverGridPos.y] = null;
+                        sound.playCopy();
+                        showToast(`Cut ${BUILDINGS[cell.type].name}`, 'info');
+                        updateUI();
+                    }
+                }
+            } else if (e.key.toLowerCase() === 'v') { // Paste
+                if (state.clipboard && hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                    if (state.clipboard.type === 'single') {
+                        placeStructure(hoverGridPos.x, hoverGridPos.y, state.clipboard.data.type, state.clipboard.data.rotation);
+                        sound.playPaste();
+                    } else if (state.clipboard.type === 'schematic') {
+                        let placed = 0;
+                        state.clipboard.data.forEach(item => {
+                            const targetX = hoverGridPos.x + item.relX;
+                            const targetY = hoverGridPos.y + item.relY;
+                            if (placeStructure(targetX, targetY, item.type, item.rotation)) {
+                                placed++;
+                            }
+                        });
+                        if (placed > 0) sound.playPaste();
+                    }
+                }
+            }
+        });
+
+        function updateUI() {
+            document.getElementById('cashDisplay').innerText = `$${state.cash}`;
+            document.getElementById('levelDisplay').innerText = state.level;
+            document.getElementById('deliveredDisplay').innerText = state.deliveredCount;
+
+            const neededXP = state.level * 50;
+            document.getElementById('xpText').innerText = `${state.xp} / ${neededXP}`;
+            document.getElementById('xpBar').style.width = `${Math.min(100, (state.xp / neededXP) * 100)}%`;
+
+            document.getElementById('statTotalMoney').innerText = `$${state.totalEarned}`;
+            document.getElementById('statTotalDelivered').innerText = state.deliveredCount;
+        }
+
+        function renderHotbar() {
+            const container = document.getElementById('hotbar');
+            container.innerHTML = '';
+
+            const slots = state.hotbarMode === 'assigned' ? state.hotbarSlots : state.recentItems;
+
+            for (let i = 0; i < 8; i++) {
+                const itemKey = slots[i];
+                const bld = itemKey ? BUILDINGS[itemKey] : null;
+                const isActive = state.selectedSlot === i;
+
+                const slotBtn = document.createElement('button');
+                slotBtn.className = `w-12 h-12 rounded-xl flex flex-col items-center justify-center transition relative ${
+                    isActive ? 'bg-indigo-600 text-white ring-2 ring-indigo-400 scale-105' : 'bg-slate-700/80 hover:bg-slate-700 text-slate-300'
+                }`;
+
+                slotBtn.innerHTML = `
+                    <span class="absolute top-1 left-1.5 text-[9px] font-bold opacity-60">${i + 1}</span>
+                    ${bld ? `<i class="fa-solid ${bld.icon} text-sm"></i><span class="text-[9px] mt-0.5">${bld.name.slice(0, 5)}</span>` : '<span class="text-xs text-slate-500">-</span>'}
+                `;
+
+                slotBtn.addEventListener('click', () => {
+                    state.selectedSlot = i;
+                    renderHotbar();
+                });
+
+                container.appendChild(slotBtn);
+            }
+        }
+
+        function checkAchievements() {
+            ACHIEVEMENTS.forEach(ach => {
+                if (ach.done) return;
+
+                if (ach.id === 'first_sell' && state.deliveredCount >= 1) ach.done = true;
+                if (ach.id === 'wealthy_100' && state.cash >= 200) ach.done = true;
+                if (ach.id === 'level_5' && state.level >= 5) ach.done = true;
+                if (ach.id === 'master_builder' && state.structuresPlaced >= 20) ach.done = true;
+
+                if (ach.done) {
+                    showToast(`Achievement Unlocked: ${ach.name}!`, 'success');
+                    sound.playLevelUp();
+                }
+            });
+            renderAchievements();
+        }
+
+        function renderAchievements() {
+            const list = document.getElementById('achieveList');
+            list.innerHTML = '';
+
+            ACHIEVEMENTS.forEach(ach => {
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-lg border flex items-center justify-between text-xs ${
+                    ach.done ? 'bg-indigo-950/40 border-indigo-700/60 text-slate-200' : 'bg-slate-900/40 border-slate-800 text-slate-500'
+                }`;
+                card.innerHTML = `
+                    <div>
+                        <div class="font-bold">${ach.name}</div>
+                        <div class="text-[10px] opacity-80">${ach.desc}</div>
+                    </div>
+                    <i class="fa-solid ${ach.done ? 'fa-circle-check text-indigo-400' : 'fa-circle-notch'} text-base"></i>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active', 'bg-indigo-600', 'text-white'));
+                btn.classList.add('active', 'bg-indigo-600', 'text-white');
+                state.activeTool = btn.dataset.tool;
+                showToast(`Tool: ${state.activeTool.toUpperCase()}`, 'info');
+            });
+        });
+
+        document.querySelectorAll('.build-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const bldType = btn.dataset.build;
+                state.hotbarSlots[state.selectedSlot] = bldType;
+                state.activeTool = 'pencil';
+                renderHotbar();
+                showToast(`Selected ${BUILDINGS[bldType].name}`, 'info');
+            });
+        });
+
+        document.getElementById('btnRotate').addEventListener('click', () => {
+            state.rotation = (state.rotation + 1) % 4;
+            showToast(`Rotated (${state.rotation * 90}°)`, 'info');
+        });
+
+        document.getElementById('btnHotbarMode').addEventListener('click', () => {
+            state.hotbarMode = state.hotbarMode === 'assigned' ? 'recent' : 'assigned';
+            document.getElementById('hotbarModeText').innerText = `Mode: ${state.hotbarMode === 'assigned' ? 'Assigned Slots' : 'Recent Items'}`;
+            renderHotbar();
+        });
+
+        document.getElementById('btnCopy').addEventListener('click', () => {
+            if (hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                const cell = state.grid[hoverGridPos.x][hoverGridPos.y];
+                if (cell) {
+                    state.clipboard = { type: 'single', data: { ...cell } };
+                    sound.playCopy();
+                    showToast(`Copied ${BUILDINGS[cell.type].name}`, 'info');
+                }
+            }
+        });
+
+        document.getElementById('btnCut').addEventListener('click', () => {
+            if (hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                const cell = state.grid[hoverGridPos.x][hoverGridPos.y];
+                if (cell) {
+                    state.clipboard = { type: 'single', data: { ...cell } };
+                    state.grid[hoverGridPos.x][hoverGridPos.y] = null;
+                    sound.playCopy();
+                    showToast(`Cut ${BUILDINGS[cell.type].name}`, 'info');
+                    updateUI();
+                }
+            }
+        });
+
+        document.getElementById('btnPaste').addEventListener('click', () => {
+            if (state.clipboard && hoverGridPos && !isOutOfBounds(hoverGridPos.x, hoverGridPos.y)) {
+                if (state.clipboard.type === 'single') {
+                    placeStructure(hoverGridPos.x, hoverGridPos.y, state.clipboard.data.type, state.clipboard.data.rotation);
+                    sound.playPaste();
+                }
+            }
+        });
+
+        const modalSettings = document.getElementById('modalSettings');
+        const modalSaves = document.getElementById('modalSaves');
+        const modalStats = document.getElementById('modalStats');
+
+        document.getElementById('btnSettings').onclick = () => modalSettings.classList.remove('hidden');
+        document.getElementById('btnCloseSettings').onclick = () => modalSettings.classList.add('hidden');
+        document.getElementById('btnSaveSettings').onclick = () => modalSettings.classList.add('hidden');
+
+        document.getElementById('btnSaveLoad').onclick = () => modalSaves.classList.remove('hidden');
+        document.getElementById('btnCloseSaves').onclick = () => modalSaves.classList.add('hidden');
+
+        document.getElementById('btnStats').onclick = () => {
+            renderAchievements();
+            modalStats.classList.remove('hidden');
+        };
+        document.getElementById('btnCloseStats').onclick = () => modalStats.classList.add('hidden');
+
+        // Theme Toggle Handler
+        document.getElementById('btnToggleTheme').onclick = () => {
+            const body = document.getElementById('appBody');
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                body.classList.add('bg-slate-100', 'text-slate-900');
+                icon.className = 'fa-solid fa-sun';
+                text.innerText = 'Light Mode';
+            } else {
+                body.classList.add('dark');
+                body.classList.remove('bg-slate-100', 'text-slate-900');
+                icon.className = 'fa-solid fa-moon';
+                text.innerText = 'Dark Mode';
+            }
+        };
+
+        // Volume Sliders
+        document.getElementById('sliderSFX').oninput = (e) => {
+            sound.sfxVol = e.target.value / 100;
+            document.getElementById('sfxVal').innerText = `${e.target.value}%`;
+        };
+
+        // Save & Load LocalStorage
+        function saveGame() {
+            const saveData = {
+                cash: state.cash,
+                level: state.level,
+                xp: state.xp,
+                deliveredCount: state.deliveredCount,
+                totalEarned: state.totalEarned,
+                structuresPlaced: state.structuresPlaced,
+                grid: state.grid,
+                hotbarSlots: state.hotbarSlots,
+                achievements: ACHIEVEMENTS.map(a => ({ id: a.id, done: a.done }))
+            };
+            localStorage.setItem('shapefactory_save', JSON.stringify(saveData));
+            showToast('Game saved successfully!', 'success');
+        }
+
+        function loadGame() {
+            const saved = localStorage.getItem('shapefactory_save');
+            if (!saved) {
+                showToast('No save file found!', 'error');
+                return;
+            }
+            try {
+                const data = JSON.parse(saved);
+                state.cash = data.cash;
+                state.level = data.level;
+                state.xp = data.xp;
+                state.deliveredCount = data.deliveredCount;
+                state.totalEarned = data.totalEarned || 0;
+                state.structuresPlaced = data.structuresPlaced || 0;
+                state.grid = data.grid;
+                state.hotbarSlots = data.hotbarSlots || state.hotbarSlots;
+
+                if (data.achievements) {
+                    data.achievements.forEach(sa => {
+                        const target = ACHIEVEMENTS.find(a => a.id === sa.id);
+                        if (target) target.done = sa.done;
+                    });
+                }
+
+                updateUI();
+                renderHotbar();
+                showToast('Game loaded successfully!', 'success');
+            } catch(e) {
+                showToast('Failed to load save data!', 'error');
+            }
+        }
+
+        document.getElementById('btnQuickSave').onclick = saveGame;
+        document.getElementById('btnQuickLoad').onclick = loadGame;
+
+        // Auto Save Every 5 Minutes
+        setInterval(saveGame, 5 * 60 * 1000);
+
+        function gameLoop(time) {
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+
+            update(Math.min(dt, 0.1));
+            render();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function() {
+            renderHotbar();
+            updateUI();
+            renderAchievements();
+
+            // Setup default starting hub on grid center
+            const cx = Math.floor(GRID_SIZE / 2);
+            const cy = Math.floor(GRID_SIZE / 2);
+
+            placeStructure(cx, cy, 'seller', 0, true);
+            placeStructure(cx - 3, cy, 'dropper', 0, true);
+            placeStructure(cx - 2, cy, 'conveyor', 0, true);
+            placeStructure(cx - 1, cy, 'conveyor', 0, true);
+
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
 </body>
 </html>
